@@ -64,6 +64,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  // Packaged builds get the icon from electron-builder; in dev the dock would otherwise show Electron's.
+  if (!app.isPackaged) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
   session.defaultSession.setSpellCheckerEnabled(false)
   // Deny every web permission (camera, mic, location, notifications, ...) except the clipboard the app uses.
   const allowedPermissions = new Set<string>(['clipboard-read', 'clipboard-sanitized-write'])

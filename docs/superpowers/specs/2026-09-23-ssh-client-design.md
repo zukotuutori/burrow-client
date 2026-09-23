@@ -60,7 +60,10 @@ channel close → ipc "session:closed" (id, reason)
 ```
 src/main/
   index.ts           app lifecycle, window creation
+  menu.ts            macOS menu (Linux gets none so no accelerators steal shell keys)
   ipc.ts             registers all IPC handlers, validates input
+  core.ts            Core: storage, vault and sessions, no Electron imports (testable)
+  validate.ts        input validation for profiles, snippets, settings
   store/             JSON file store with atomic writes (profiles, snippets, settings, known hosts)
   vault/             vault file format, unlock, lock, read/write secrets
   keys/              key generation, import, parsing, fingerprints
@@ -68,12 +71,13 @@ src/main/
   ssh/sftp.ts        SFTP operations on an existing connection
   ssh/hostkeys.ts    known-hosts check logic
 src/preload/
-  api.ts             typed bridge
-src/renderer/
-  views/             Hosts, Keychain, Snippets, KnownHosts, Settings, Session, Unlock
-  components/        HostCard, SidePanel, TabBar, TerminalPane, SplitLayout, SftpBrowser, dialogs
+  index.ts           typed bridge (window.burrow)
+src/renderer/src/
+  views/             Hosts, Keychain, Snippets, KnownHosts, Settings
+  session/           session tab, split layout, terminal hosts, snippets drawer, SFTP browser
+  components/        SidePanel, Modal, Field, dialogs
 src/shared/
-  types.ts           types shared by main, preload and renderer
+  types.ts, api.ts   types shared by main, preload and renderer
 ```
 
 ## Storage
@@ -148,7 +152,9 @@ Implemented via `ssh2`'s `hostVerifier` callback, using SHA256 fingerprints.
 - **Known Hosts**: list of entries, deletable.
 - **Settings**: font family, font size, theme (dark/light).
 - **Session tab**:
-  - Terminal panes in a split layout. Split right `Cmd/Ctrl+D`, split down `Cmd/Ctrl+Shift+D`, close pane `Cmd/Ctrl+W`. Dividers are draggable.
+  - Terminal panes in a split layout. Dividers are draggable. Shortcuts:
+    - macOS: split right `Cmd+D`, split down `Cmd+Shift+D`, close pane `Cmd+W`
+    - Linux: split right `Ctrl+Shift+D`, split down `Ctrl+Shift+E`, close pane `Ctrl+Shift+W`, copy/paste `Ctrl+Shift+C`/`Ctrl+Shift+V`. Plain `Ctrl+D`, `Ctrl+W` and `Ctrl+C` stay with the shell (EOF, delete word, interrupt).
   - Snippets drawer (toggle). Clicking a snippet writes its command plus newline to the focused pane.
   - SFTP view (toggle) as a split next to the terminal. Upload via dialog or drag and drop, download via save dialog, rename, delete (with confirm), mkdir.
   - On disconnect, an overlay in the pane shows the reason and a Reconnect button.

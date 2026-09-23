@@ -13,6 +13,15 @@ if (app.isPackaged && ['remote-debugging-port', 'remote-debugging-pipe'].some((s
   app.exit(1)
 }
 
+// When launched without a terminal (desktop launcher, or the terminal was closed) stdout/stderr are dead
+// pipes. Electron logs every IPC handler error with console.error, and the resulting EPIPE would otherwise
+// crash the main process instead of returning the error to the window.
+for (const stream of [process.stdout, process.stderr]) {
+  stream.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code !== 'EPIPE') throw err
+  })
+}
+
 // Only one copy may run: two copies on the same data would overwrite each other's saves.
 if (!app.requestSingleInstanceLock()) app.exit(0)
 

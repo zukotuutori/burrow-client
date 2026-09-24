@@ -37,6 +37,8 @@ export interface BurrowApi {
     remove(id: string): Promise<void>
     hasPassword(id: string): Promise<boolean>
     forgetPassword(id: string): Promise<void>
+    /** Whether the host currently accepts TCP connections on its SSH port. */
+    reachable(id: string): Promise<boolean>
   }
   snippets: {
     list(): Promise<Snippet[]>

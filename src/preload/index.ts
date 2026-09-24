@@ -47,7 +47,8 @@ const api: BurrowApi = {
     save: (p, pw) => invoke('profiles:save', p, pw),
     remove: (id) => invoke('profiles:remove', id),
     hasPassword: (id) => invoke('profiles:hasPassword', id),
-    forgetPassword: (id) => invoke('profiles:forgetPassword', id)
+    forgetPassword: (id) => invoke('profiles:forgetPassword', id),
+    reachable: (id) => invoke('profiles:reachable', id)
   },
   snippets: {
     list: () => invoke('snippets:list'),

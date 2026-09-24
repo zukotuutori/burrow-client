@@ -113,6 +113,9 @@ export function HostForm({ profile, onDone }: { profile: Profile; onDone: () => 
           )}
         </Field>
       )}
+      <Field label="Note">
+        <textarea value={p.note ?? ''} onChange={(e) => set('note', e.target.value)} placeholder="Optional" maxLength={5000} />
+      </Field>
       <div className="form-actions">
         {exists && (
           <button type="button" className="danger ghost" onClick={remove}>

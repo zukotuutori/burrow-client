@@ -68,6 +68,7 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
   handle('profiles:remove', (id) => core.deleteProfile(str(id, 'id')))
   handle('profiles:hasPassword', (id) => core.hasPassword(str(id, 'id')))
   handle('profiles:forgetPassword', (id) => core.forgetPassword(str(id, 'id')))
+  handle('profiles:reachable', (id) => core.isReachable(str(id, 'id')))
 
   handle('snippets:list', () => core.snippets.list())
   handle('snippets:save', (s) => core.saveSnippet(s))

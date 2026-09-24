@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { createServer, type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Core, type Ask } from '../src/main/core'
@@ -219,14 +220,47 @@ describe('Core ids', () => {
   })
 })
 
+describe('Core host notes and status', () => {
+  it('stores a trimmed note and drops an empty one', async () => {
+    await core.saveProfile(profile(22, { note: '  rack 4, ask Tom before reboot  ' }))
+    expect(core.profiles.get('p1')?.note).toBe('rack 4, ask Tom before reboot')
+    await core.saveProfile(profile(22, { note: '   ' }))
+    expect(core.profiles.get('p1')).not.toHaveProperty('note')
+    await expect(core.saveProfile(profile(22, { note: 'x'.repeat(5001) }))).rejects.toThrow(/Note/)
+  })
+
+  it('reports whether a saved host accepts connections', async () => {
+    const listener = createServer((s) => s.destroy())
+    await new Promise<void>((r) => listener.listen(0, '127.0.0.1', r))
+    const port = (listener.address() as AddressInfo).port
+    await core.saveProfile(profile(port))
+    expect(await core.isReachable('p1')).toBe(true)
+    await new Promise((r) => listener.close(r))
+    expect(await core.isReachable('p1')).toBe(false)
+    await expect(core.isReachable('nope')).rejects.toThrow(/not found/)
+  })
+})
+
 describe('Core settings', () => {
   it('fills in the auto-lock default for settings saved before it existed', async () => {
     await core.settings.set({ fontFamily: 'Menlo', fontSize: 13, theme: 'dark' } as never)
     expect(core.getSettings().autoLockMinutes).toBe(15)
   })
 
+  it('keeps host status off for settings saved before it existed', async () => {
+    await core.settings.set({ fontFamily: 'Menlo', fontSize: 13, theme: 'dark', autoLockMinutes: 15 } as never)
+    expect(core.getSettings().showHostStatus).toBe(false)
+  })
+
+  it('validates the host status setting', async () => {
+    const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', autoLockMinutes: 15 }
+    await core.saveSettings({ ...base, showHostStatus: true })
+    expect(core.getSettings().showHostStatus).toBe(true)
+    await expect(core.saveSettings({ ...base, showHostStatus: 'yes' })).rejects.toThrow(/host status/)
+  })
+
   it('validates the auto-lock minutes', async () => {
-    const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark' }
+    const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', showHostStatus: false }
     await core.saveSettings({ ...base, autoLockMinutes: 0 })
     expect(core.getSettings().autoLockMinutes).toBe(0)
     await expect(core.saveSettings({ ...base, autoLockMinutes: -1 })).rejects.toThrow(/Auto-lock/)

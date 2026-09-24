@@ -9,7 +9,8 @@ export const DEFAULT_SETTINGS: Settings = {
   fontFamily: "Menlo, 'DejaVu Sans Mono', 'Liberation Mono', monospace",
   fontSize: 13,
   theme: 'dark',
-  autoLockMinutes: 15
+  autoLockMinutes: 15,
+  showHostStatus: false
 }
 
 export function validateProfile(v: unknown): Profile {
@@ -21,6 +22,8 @@ export function validateProfile(v: unknown): Profile {
   if (!Number.isInteger(p.port) || p.port! < 1 || p.port! > 65535) throw new Error('Port must be between 1 and 65535')
   if (p.authType !== 'password' && p.authType !== 'key') throw new Error('Invalid authentication type')
   if (p.authType === 'key' && !nonEmpty(p.keyId)) throw new Error('Choose a key')
+  if (p.note !== undefined && (!isStr(p.note) || p.note.length > 5000)) throw new Error('Note must be at most 5000 characters')
+  const note = p.note?.trim()
   return {
     id: p.id,
     name: p.name.trim(),
@@ -29,7 +32,8 @@ export function validateProfile(v: unknown): Profile {
     port: p.port!,
     user: p.user.trim(),
     authType: p.authType,
-    ...(p.authType === 'key' ? { keyId: p.keyId } : {})
+    ...(p.authType === 'key' ? { keyId: p.keyId } : {}),
+    ...(note ? { note } : {})
   }
 }
 
@@ -85,5 +89,12 @@ export function validateSettings(v: unknown): Settings {
   if (!Number.isInteger(s.autoLockMinutes) || s.autoLockMinutes! < 0 || s.autoLockMinutes! > 1440) {
     throw new Error('Auto-lock must be 0 (off) to 1440 minutes')
   }
-  return { fontFamily: s.fontFamily.trim(), fontSize: s.fontSize!, theme: s.theme, autoLockMinutes: s.autoLockMinutes! }
+  if (typeof s.showHostStatus !== 'boolean') throw new Error('Invalid host status setting')
+  return {
+    fontFamily: s.fontFamily.trim(),
+    fontSize: s.fontSize!,
+    theme: s.theme,
+    autoLockMinutes: s.autoLockMinutes!,
+    showHostStatus: s.showHostStatus
+  }
 }

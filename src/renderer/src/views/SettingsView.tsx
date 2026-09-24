@@ -65,6 +65,23 @@ export function SettingsView() {
             ))}
           </select>
         </Field>
+        <Field
+          label="Host status"
+          hint="Shows a green or red dot on each host. Burrow opens a short connection to every saved host every 30 seconds while the host list is open."
+        >
+          <div className="segmented">
+            {([true, false] as const).map((on) => (
+              <button
+                key={String(on)}
+                type="button"
+                className={draft.showHostStatus === on ? 'on' : ''}
+                onClick={() => save({ ...draft, showHostStatus: on })}
+              >
+                {on ? 'On' : 'Off'}
+              </button>
+            ))}
+          </div>
+        </Field>
       </div>
       <ChangePasswordForm />
     </div>

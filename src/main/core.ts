@@ -16,6 +16,7 @@ import type {
 import { masterPasswordProblems, PASSWORD_RULE_TEXT } from '../shared/passwordPolicy'
 import { generateKey, importKey, isEncrypted, type KeyMaterial } from './keys/keys'
 import { checkHostKey, hostId } from './ssh/hostkeys'
+import { isReachable } from './ssh/reachable'
 import { SshSession } from './ssh/session'
 import { SftpClient } from './ssh/sftp'
 import { CorruptFileError } from './store/jsonFile'
@@ -127,6 +128,13 @@ export class Core {
     await this.profiles.upsert(p)
     if (p.authType === 'key') await this.vault.setPassword(p.id, undefined)
     else if (password) await this.vault.setPassword(p.id, password)
+  }
+
+  /** Only saved hosts can be probed, so the renderer cannot use this to scan arbitrary addresses. */
+  async isReachable(profileId: string): Promise<boolean> {
+    const p = this.profiles.get(profileId)
+    if (!p) throw new Error('Host not found')
+    return isReachable(p.host, p.port)
   }
 
   async deleteProfile(id: string): Promise<void> {

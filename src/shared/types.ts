@@ -10,6 +10,7 @@ export interface Profile {
   user: string
   authType: AuthType
   keyId?: string
+  note?: string
 }
 
 export interface Snippet {
@@ -46,6 +47,8 @@ export interface Settings {
   theme: 'dark' | 'light'
   /** Lock the vault after this many minutes without keyboard or mouse input. 0 turns it off. */
   autoLockMinutes: number
+  /** Regularly check whether each host accepts connections and show it on the host cards. */
+  showHostStatus: boolean
 }
 
 export interface KeyMeta {

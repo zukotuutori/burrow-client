@@ -1,9 +1,17 @@
-import type { Profile, Settings, Snippet, SnippetExport, SnippetExportEntry } from '../shared/types'
+import type { KeyMeta, KnownHosts, Profile, Settings, Snippet, SnippetExport, SnippetExportEntry, Syncable } from '../shared/types'
 
 const isStr = (v: unknown): v is string => typeof v === 'string'
 const nonEmpty = (v: unknown): v is string => isStr(v) && v.trim().length > 0
 /** Ids are used as object keys in the vault, so they must be plain and never a built-in key like "constructor". */
-const isSafeId = (v: unknown): v is string => isStr(v) && /^[A-Za-z0-9-]{1,64}$/.test(v) && !(v in Object.prototype)
+export const isSafeId = (v: unknown): v is string => isStr(v) && /^[A-Za-z0-9-]{1,64}$/.test(v) && !(v in Object.prototype)
+
+/** Keeps the sync fields, so data from another device keeps its timestamps. */
+function syncFields(v: { updatedAt?: unknown; deleted?: unknown }): Syncable {
+  return {
+    ...(Number.isFinite(v.updatedAt) ? { updatedAt: v.updatedAt as number } : {}),
+    ...(v.deleted === true ? { deleted: true } : {})
+  }
+}
 
 export const DEFAULT_SETTINGS: Settings = {
   fontFamily: "Menlo, 'DejaVu Sans Mono', 'Liberation Mono', monospace",
@@ -25,6 +33,7 @@ export function validateProfile(v: unknown): Profile {
   if (p.note !== undefined && (!isStr(p.note) || p.note.length > 5000)) throw new Error('Note must be at most 5000 characters')
   const note = p.note?.trim()
   return {
+    ...syncFields(p),
     id: p.id,
     name: p.name.trim(),
     group: isStr(p.group) ? p.group.trim() : '',
@@ -45,6 +54,7 @@ export function validateSnippet(v: unknown): Snippet {
   const tags = Array.isArray(s.tags) ? s.tags.filter(nonEmpty).map((t) => t.trim()) : []
   const profileIds = Array.isArray(s.profileIds) ? [...new Set(s.profileIds.filter(nonEmpty))] : []
   return {
+    ...syncFields(s),
     id: s.id,
     name: s.name.trim(),
     command: s.command,
@@ -91,10 +101,38 @@ export function validateSettings(v: unknown): Settings {
   }
   if (typeof s.showHostStatus !== 'boolean') throw new Error('Invalid host status setting')
   return {
+    ...syncFields(s),
     fontFamily: s.fontFamily.trim(),
     fontSize: s.fontSize!,
     theme: s.theme,
     autoLockMinutes: s.autoLockMinutes!,
     showHostStatus: s.showHostStatus
   }
+}
+
+export function validateKeyMeta(v: unknown): KeyMeta {
+  const k = (v ?? {}) as Partial<KeyMeta>
+  if (!isSafeId(k.id)) throw new Error('Invalid key id')
+  if (![k.name, k.type, k.publicKey, k.fingerprint, k.createdAt].every(isStr)) throw new Error('Invalid key')
+  return {
+    ...syncFields(k),
+    id: k.id,
+    name: k.name!,
+    type: k.type!,
+    publicKey: k.publicKey!,
+    fingerprint: k.fingerprint!,
+    createdAt: k.createdAt!
+  }
+}
+
+export function validateKnownHosts(v: unknown): KnownHosts {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('Invalid known hosts')
+  const out: KnownHosts = {}
+  for (const [id, raw] of Object.entries(v)) {
+    const e = (raw ?? {}) as Partial<KnownHosts[string]>
+    if (!/^\S+:\d{1,5}$/.test(id) || id in Object.prototype) throw new Error('Invalid known host')
+    if (![e.algo, e.fingerprint, e.addedAt].every(isStr)) throw new Error('Invalid known host')
+    out[id] = { ...syncFields(e), algo: e.algo!, fingerprint: e.fingerprint!, addedAt: e.addedAt! }
+  }
+  return out
 }

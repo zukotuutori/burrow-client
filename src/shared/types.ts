@@ -1,7 +1,15 @@
+/** Fields every synced item carries. */
+export interface Syncable {
+  /** Date.now() of the last change. Missing on data written before sync existed, which counts as 0. */
+  updatedAt?: number
+  /** Tombstone: the item was deleted but is kept so other devices learn about the delete. */
+  deleted?: boolean
+}
+
 export type AuthType = 'password' | 'key'
 export type KeyType = 'ed25519' | 'rsa'
 
-export interface Profile {
+export interface Profile extends Syncable {
   id: string
   name: string
   group: string
@@ -13,7 +21,7 @@ export interface Profile {
   note?: string
 }
 
-export interface Snippet {
+export interface Snippet extends Syncable {
   id: string
   name: string
   command: string
@@ -41,7 +49,7 @@ export interface SnippetImportResult {
   skipped: number
 }
 
-export interface Settings {
+export interface Settings extends Syncable {
   fontFamily: string
   fontSize: number
   theme: 'dark' | 'light'
@@ -51,7 +59,7 @@ export interface Settings {
   showHostStatus: boolean
 }
 
-export interface KeyMeta {
+export interface KeyMeta extends Syncable {
   id: string
   name: string
   type: string
@@ -60,7 +68,7 @@ export interface KeyMeta {
   createdAt: string
 }
 
-export interface KnownHost {
+export interface KnownHost extends Syncable {
   algo: string
   fingerprint: string
   addedAt: string
@@ -97,4 +105,12 @@ export interface PromptAnswer {
   ok: boolean
   value?: string
   save?: boolean
+}
+
+export interface SyncStatus {
+  loggedIn: boolean
+  serverUrl?: string
+  username?: string
+  lastSyncAt?: string
+  lastError?: string
 }

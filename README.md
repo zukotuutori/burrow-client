@@ -1,6 +1,6 @@
 # Burrow Client
 
-A local-first SSH client for macOS and Linux. No accounts, no sync, nothing leaves your machine.
+A local-first SSH client for macOS and Linux. Without an account nothing leaves your machine. Optional sync to your own server is end-to-end encrypted (see `server/README.md`).
 
 - Tabbed sessions with split panes
 - Host profiles with groups and search
@@ -43,7 +43,7 @@ npm run build:linux
 - macOS: `~/Library/Application Support/Burrow Client/`
 - Linux: `~/.config/Burrow Client/`
 
-`profiles.json`, `snippets.json`, `keys.json` (public keys only), `known_hosts.json` and `settings.json` are plain JSON you can read and back up. `vault.enc` holds passwords, private keys and passphrases, encrypted with your master password. A forgotten master password cannot be recovered.
+`profiles.json`, `snippets.json`, `keys.json` (public keys only), `known_hosts.json` and `settings.json` are plain JSON you can read and back up. `sync.json` holds the sync server address and user name. `vault.enc` holds passwords, private keys, passphrases and the sync keys, encrypted with your master password. A forgotten master password cannot be recovered.
 
 ## Keyboard shortcuts
 

@@ -78,14 +78,23 @@ describe('Repo', () => {
     await repo.upsert({ id: 'b', v: 2 })
     await repo.upsert({ id: 'a', v: 3 })
     expect(repo.list()).toEqual([
-      { id: 'a', v: 3 },
-      { id: 'b', v: 2 }
+      { id: 'a', v: 3, updatedAt: expect.any(Number) },
+      { id: 'b', v: 2, updatedAt: expect.any(Number) }
     ])
     await repo.remove('a')
 
     const again = new Repo<{ id: string; v: number }>(file)
     await again.load()
-    expect(again.list()).toEqual([{ id: 'b', v: 2 }])
-    expect(again.get('b')).toEqual({ id: 'b', v: 2 })
+    expect(again.list()).toEqual([{ id: 'b', v: 2, updatedAt: expect.any(Number) }])
+    expect(again.get('b')).toMatchObject({ id: 'b', v: 2 })
+    expect(again.get('a')).toBeUndefined()
+  })
+
+  it('keeps a removed item as a tombstone with only id and time', async () => {
+    const repo = new Repo<{ id: string; v: number }>(join(dir, 'items.json'))
+    await repo.upsert({ id: 'a', v: 1 })
+    await repo.remove('a')
+    expect(repo.all()).toEqual([{ id: 'a', updatedAt: expect.any(Number), deleted: true }])
+    expect(repo.list()).toEqual([])
   })
 })

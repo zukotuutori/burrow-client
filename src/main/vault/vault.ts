@@ -13,6 +13,13 @@ interface VaultData {
   version: 1
   passwords: Record<string, string>
   keys: Record<string, KeySecret>
+  /** Base64 keys of the sync account. Missing when this device is not logged in. */
+  sync?: { authKey: string; encKey: string }
+}
+
+export interface SyncKeys {
+  authKey: Buffer
+  encKey: Buffer
 }
 
 interface Unlocked {
@@ -135,6 +142,26 @@ export class Vault {
     const { keys } = this.unlocked.data
     if (secret === undefined) delete keys[keyId]
     else keys[keyId] = secret
+    await this.save()
+  }
+
+  getSyncKeys(): SyncKeys | undefined {
+    const s = this.unlocked.data.sync
+    return s && { authKey: Buffer.from(s.authKey, 'base64'), encKey: Buffer.from(s.encKey, 'base64') }
+  }
+
+  async setSyncKeys(keys: SyncKeys | undefined): Promise<void> {
+    const data = this.unlocked.data
+    if (keys) data.sync = { authKey: keys.authKey.toString('base64'), encKey: keys.encKey.toString('base64') }
+    else delete data.sync
+    await this.save()
+  }
+
+  /** Replaces every saved password and key secret in one write. Used when applying data from sync. */
+  async replaceSecrets(passwords: Record<string, string>, keys: Record<string, KeySecret>): Promise<void> {
+    const data = this.unlocked.data
+    data.passwords = passwords
+    data.keys = keys
     await this.save()
   }
 

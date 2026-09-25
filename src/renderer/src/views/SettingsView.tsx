@@ -6,6 +6,7 @@ import { Field } from '../components/Field'
 import { PasswordRules } from '../components/PasswordRules'
 import { useData } from '../data'
 import { useAction, useToast } from '../toast'
+import { SyncSection } from './SyncSection'
 import { errMsg } from '../util'
 
 const AUTO_LOCK_CHOICES = [0, 5, 10, 15, 30, 60]
@@ -83,6 +84,7 @@ export function SettingsView() {
           </div>
         </Field>
       </div>
+      <SyncSection />
       <ChangePasswordForm />
     </div>
   )

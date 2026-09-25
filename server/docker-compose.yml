@@ -1,0 +1,47 @@
+name: burrow-sync
+
+services:
+  burrow-sync:
+    build: .
+    image: burrow-sync:local
+    container_name: burrow-sync
+    restart: unless-stopped
+    init: true
+    environment:
+      # Only set while you create accounts, then empty it again (see README).
+      REGISTRATION_CODE: ${REGISTRATION_CODE:-}
+      # The container is only reachable through the reverse proxy, so its X-Real-IP header can be trusted.
+      TRUST_PROXY: "1"
+      # The file system is read-only, SQLite's temp files go to the tmpfs below.
+      TMPDIR: /tmp
+    volumes:
+      - data:/data
+    # No "ports:". Nothing on the internet reaches the container directly, only the reverse proxy does.
+    networks:
+      - burrow-sync
+    # Hardening: read-only file system, no Linux capabilities, no privilege escalation, runs as user "node".
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Limits, so this container can never slow down the website next to it.
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+volumes:
+  data:
+
+networks:
+  # Created once with: docker network create --internal burrow-sync
+  # "internal" means containers on it cannot reach the internet. Only this container and the reverse proxy join it.
+  burrow-sync:
+    external: true

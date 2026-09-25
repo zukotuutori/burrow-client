@@ -97,6 +97,8 @@ app.whenReady().then(async () => {
     const idle = { idleSeconds: powerMonitor.getSystemIdleTime(), minutes: core.getSettings().autoLockMinutes }
     if (shouldIdleLock({ ...idle, unlocked: core.vault.isUnlocked })) lockVault()
   }, 15_000)
+  // Pick up changes from other devices while nothing changes here.
+  setInterval(() => void core.sync.syncIfLoggedIn(), 5 * 60_000)
   buildMenu()
   createWindow()
   app.on('activate', () => {

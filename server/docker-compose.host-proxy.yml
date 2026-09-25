@@ -1,0 +1,46 @@
+# Use this file instead of docker-compose.yml when the reverse proxy runs directly on the server (installed with
+# apt, not in Docker). Such a proxy cannot join a Docker network, so the container listens on 127.0.0.1:3100.
+# 127.0.0.1 means only programs on the server itself reach it, not the internet and not other containers.
+#
+#   docker compose -f docker-compose.host-proxy.yml up -d --build
+name: burrow-sync
+
+services:
+  burrow-sync:
+    build: .
+    image: burrow-sync:local
+    container_name: burrow-sync
+    restart: unless-stopped
+    init: true
+    environment:
+      REGISTRATION_CODE: ${REGISTRATION_CODE:-}
+      TRUST_PROXY: "1"
+      TMPDIR: /tmp
+    volumes:
+      - data:/data
+    ports:
+      - "127.0.0.1:3100:3000"
+    networks:
+      - burrow-sync-own
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+volumes:
+  data:
+
+networks:
+  # Its own network, shared with no other container.
+  burrow-sync-own: {}

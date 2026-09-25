@@ -72,6 +72,16 @@ const api: BurrowApi = {
     get: () => invoke('settings:get'),
     save: (s) => invoke('settings:save', s)
   },
+  sync: {
+    status: () => invoke('sync:status'),
+    register: (url, user, pw, code) => invoke('sync:register', url, user, pw, code),
+    login: (url, user, pw) => invoke('sync:login', url, user, pw),
+    logout: () => invoke('sync:logout'),
+    syncNow: () => invoke('sync:now'),
+    changePassword: (current, next) => invoke('sync:changePassword', current, next),
+    deleteAccount: (pw) => invoke('sync:deleteAccount', pw),
+    onChanged: (cb) => listen('sync:changed', cb)
+  },
   session: {
     connect: (id, profileId, cols, rows) => invoke('session:connect', id, profileId, cols, rows),
     write: (id, data) => ipcRenderer.send('session:write', id, data),

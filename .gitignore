@@ -3,3 +3,7 @@ out/
 dist/
 *.tmp
 .DS_Store
+
+# sync server secrets and local test databases
+server/.env
+server/*.db

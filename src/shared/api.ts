@@ -10,6 +10,7 @@ import type {
   Settings,
   Snippet,
   SnippetImportResult,
+  SyncStatus,
   VaultStatus
 } from './types'
 
@@ -64,6 +65,17 @@ export interface BurrowApi {
   settings: {
     get(): Promise<Settings>
     save(settings: Settings): Promise<void>
+  }
+  sync: {
+    status(): Promise<SyncStatus>
+    register(serverUrl: string, username: string, password: string, code: string): Promise<void>
+    login(serverUrl: string, username: string, password: string): Promise<void>
+    logout(): Promise<void>
+    syncNow(): Promise<void>
+    changePassword(current: string, next: string): Promise<void>
+    deleteAccount(password: string): Promise<void>
+    /** Fires after a sync changed local data or the sync status. */
+    onChanged(cb: () => void): Unsubscribe
   }
   session: {
     connect(id: string, profileId: string, cols: number, rows: number): Promise<void>

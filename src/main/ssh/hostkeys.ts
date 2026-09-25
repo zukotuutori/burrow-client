@@ -12,7 +12,7 @@ export function checkHostKey(
   fingerprint: string
 ): HostKeyCheck {
   const entry = known[hostId(host, port)]
-  if (!entry) return { state: 'unknown', algo, fingerprint }
+  if (!entry || entry.deleted) return { state: 'unknown', algo, fingerprint }
   if (entry.fingerprint === fingerprint) return { state: 'match' }
   return { state: 'changed', algo, fingerprint, oldFingerprint: entry.fingerprint }
 }

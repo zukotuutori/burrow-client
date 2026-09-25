@@ -48,7 +48,10 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
 
   handle('vault:status', () => core.vault.status())
   handle('vault:create', (pw) => core.createVault(str(pw, 'password')))
-  handle('vault:unlock', (pw) => core.vault.unlock(str(pw, 'password')))
+  handle('vault:unlock', async (pw) => {
+    await core.vault.unlock(str(pw, 'password'))
+    void core.sync.syncIfLoggedIn()
+  })
   handle('vault:lock', () => {
     prompts.cancelAll()
     core.lock()
@@ -123,11 +126,23 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
     return readFile(r.filePaths[0], 'utf8')
   })
 
-  handle('knownHosts:list', () => core.knownHosts.value)
+  handle('knownHosts:list', () => core.listKnownHosts())
   handle('knownHosts:remove', (id) => core.removeKnownHost(str(id, 'id')))
 
   handle('settings:get', () => core.getSettings())
   handle('settings:save', (s) => core.saveSettings(s))
+
+  handle('sync:status', () => core.sync.status())
+  handle('sync:register', (url, user, pw, code) =>
+    core.sync.register(str(url, 'server'), str(user, 'user name'), str(pw, 'password'), str(code, 'invite code'))
+  )
+  handle('sync:login', (url, user, pw) => core.sync.login(str(url, 'server'), str(user, 'user name'), str(pw, 'password')))
+  handle('sync:logout', () => core.sync.logout())
+  handle('sync:now', () => core.sync.syncNow())
+  handle('sync:changePassword', (current, next) =>
+    core.sync.changePassword(str(current, 'current password'), str(next, 'new password'))
+  )
+  handle('sync:deleteAccount', (pw) => core.sync.deleteAccount(str(pw, 'password')))
 
   handle('session:connect', (id, profileId, cols, rows) =>
     core.connect(str(id, 'id'), str(profileId, 'profileId'), int(cols, 'cols'), int(rows, 'rows'), ask)

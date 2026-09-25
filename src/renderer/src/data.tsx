@@ -34,6 +34,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void reload()
+    // A sync can change hosts, keys, snippets and settings in the background.
+    return api.sync.onChanged(() => void reload())
   }, [reload])
 
   const theme = data?.settings.theme

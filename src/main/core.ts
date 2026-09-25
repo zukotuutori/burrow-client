@@ -21,10 +21,23 @@ import { SshSession } from './ssh/session'
 import { SftpClient } from './ssh/sftp'
 import { CorruptFileError } from './store/jsonFile'
 import { JsonDoc } from './store/jsonDoc'
-import { Repo } from './store/repo'
-import { DEFAULT_SETTINGS, validateProfile, validateSettings, validateSnippet, validateSnippetExport } from './validate'
+import { Repo, tombstone } from './store/repo'
+import { mergeState } from './sync/merge'
+import { SYNC_KDF } from './sync/syncCrypto'
+import { SyncService } from './sync/syncService'
+import type { SyncState } from './sync/types'
+import {
+  DEFAULT_SETTINGS,
+  isSafeId,
+  validateKeyMeta,
+  validateKnownHosts,
+  validateProfile,
+  validateSettings,
+  validateSnippet,
+  validateSnippetExport
+} from './validate'
 import { DEFAULT_KDF, WrongPasswordError, type KdfParams } from './vault/crypto'
-import { Vault } from './vault/vault'
+import { Vault, type KeySecret } from './vault/vault'
 
 function assertStrongMasterPassword(password: string): void {
   const problems = masterPasswordProblems(password)
@@ -33,7 +46,7 @@ function assertStrongMasterPassword(password: string): void {
   }
 }
 
-export type Emit = (channel: 'session:data' | 'session:closed', ...args: unknown[]) => void
+export type Emit = (channel: 'session:data' | 'session:closed' | 'sync:changed', ...args: unknown[]) => void
 export type Ask = (prompt: Prompt) => Promise<PromptAnswer>
 
 export class Core {
@@ -43,6 +56,7 @@ export class Core {
   readonly keys: Repo<KeyMeta>
   readonly knownHosts: JsonDoc<KnownHosts>
   readonly settings: JsonDoc<Settings>
+  readonly sync: SyncService
   private readonly sessions = new Map<string, SshSession>()
   private readonly sftps = new Map<string, SftpClient>()
   private loadErrors: LoadError[] = []
@@ -52,7 +66,8 @@ export class Core {
   constructor(
     dir: string,
     private readonly emit: Emit,
-    kdf: KdfParams = DEFAULT_KDF
+    kdf: KdfParams = DEFAULT_KDF,
+    syncKdf: KdfParams = SYNC_KDF
   ) {
     this.vault = new Vault(join(dir, 'vault.enc'), kdf)
     this.profiles = new Repo(join(dir, 'profiles.json'))
@@ -60,10 +75,11 @@ export class Core {
     this.keys = new Repo(join(dir, 'keys.json'))
     this.knownHosts = new JsonDoc<KnownHosts>(join(dir, 'known_hosts.json'), {})
     this.settings = new JsonDoc<Settings>(join(dir, 'settings.json'), DEFAULT_SETTINGS)
+    this.sync = new SyncService(this, join(dir, 'sync.json'), () => this.emit('sync:changed'), syncKdf)
   }
 
   private get docs(): JsonDoc<unknown>[] {
-    return [this.profiles.doc, this.snippets.doc, this.keys.doc, this.knownHosts, this.settings] as JsonDoc<unknown>[]
+    return [this.profiles.doc, this.snippets.doc, this.keys.doc, this.knownHosts, this.settings, this.sync.config] as JsonDoc<unknown>[]
   }
 
   async init(): Promise<void> {
@@ -115,6 +131,7 @@ export class Core {
   }
 
   lock(): void {
+    this.sync.stop()
     this.lockGeneration++
     this.closeAll()
     this.vault.lock()
@@ -128,6 +145,7 @@ export class Core {
     await this.profiles.upsert(p)
     if (p.authType === 'key') await this.vault.setPassword(p.id, undefined)
     else if (password) await this.vault.setPassword(p.id, password)
+    this.changed()
   }
 
   /** Only saved hosts can be probed, so the renderer cannot use this to scan arbitrary addresses. */
@@ -141,14 +159,17 @@ export class Core {
     await this.profiles.remove(id)
     await this.vault.setPassword(id, undefined)
     // Snippets left without any host become global again instead of disappearing.
-    if (!this.snippets.list().some((s) => s.profileIds?.includes(id))) return
-    const snippets = this.snippets.list().map((s) => {
-      if (!s.profileIds?.includes(id)) return s
-      const { profileIds, ...rest } = s
-      const remaining = profileIds.filter((p) => p !== id)
-      return remaining.length ? { ...rest, profileIds: remaining } : rest
-    })
-    await this.snippets.doc.set(snippets)
+    if (this.snippets.list().some((s) => s.profileIds?.includes(id))) {
+      const updatedAt = Date.now()
+      const snippets = this.snippets.all().map((s) => {
+        if (s.deleted || !s.profileIds?.includes(id)) return s
+        const { profileIds, ...rest } = s
+        const remaining = profileIds.filter((p) => p !== id)
+        return remaining.length ? { ...rest, profileIds: remaining, updatedAt } : { ...rest, updatedAt }
+      })
+      await this.snippets.doc.set(snippets)
+    }
+    this.changed()
   }
 
   hasPassword(id: string): boolean {
@@ -157,6 +178,19 @@ export class Core {
 
   async forgetPassword(id: string): Promise<void> {
     await this.vault.setPassword(id, undefined)
+    await this.touchProfile(id)
+  }
+
+  /** Marks a host as changed after its saved password changed, so the change wins on other devices. */
+  private async touchProfile(id: string): Promise<void> {
+    const p = this.profiles.get(id)
+    if (p) await this.profiles.upsert(p)
+    this.changed()
+  }
+
+  /** Called after every change the user makes, so sync can upload it. */
+  private changed(): void {
+    this.sync.schedule()
   }
 
   // Snippets and settings
@@ -165,10 +199,12 @@ export class Core {
     const s = validateSnippet(input)
     if (s.profileIds?.some((id) => !this.profiles.get(id))) throw new Error('Host not found')
     await this.snippets.upsert(s)
+    this.changed()
   }
 
   async deleteSnippet(id: string): Promise<void> {
     await this.snippets.remove(id)
+    this.changed()
   }
 
   /** All snippets without ids; host links are written as host labels so they can be matched on another machine. */
@@ -208,9 +244,15 @@ export class Core {
       }
       seen.add(k)
       const profileIds = [...new Set((e.hosts ?? []).flatMap(byLabel))]
-      added.push(validateSnippet({ id: randomUUID(), name: e.name, command: e.command, tags: e.tags, profileIds }))
+      added.push({
+        ...validateSnippet({ id: randomUUID(), name: e.name, command: e.command, tags: e.tags, profileIds }),
+        updatedAt: Date.now()
+      })
     }
-    if (added.length) await this.snippets.doc.set([...this.snippets.list(), ...added])
+    if (added.length) {
+      await this.snippets.doc.set([...this.snippets.all(), ...added])
+      this.changed()
+    }
     return { imported: added.length, skipped }
   }
 
@@ -220,7 +262,8 @@ export class Core {
   }
 
   async saveSettings(input: unknown): Promise<void> {
-    await this.settings.set(validateSettings(input))
+    await this.settings.set({ ...validateSettings(input), updatedAt: Date.now() })
+    this.changed()
   }
 
   // Keys
@@ -246,6 +289,7 @@ export class Core {
     }
     await this.vault.setKey(meta.id, { privateKey: m.privateKey, ...(passphrase ? { passphrase } : {}) })
     await this.keys.upsert(meta)
+    this.changed()
     return meta
   }
 
@@ -254,14 +298,87 @@ export class Core {
     if (users.length) throw new Error(`Key is used by: ${users.map((u) => u.name).join(', ')}`)
     await this.keys.remove(id)
     await this.vault.setKey(id, undefined)
+    this.changed()
   }
 
   // Known hosts
 
+  /** Known hosts without tombstones. */
+  listKnownHosts(): KnownHosts {
+    return Object.fromEntries(Object.entries(this.knownHosts.value).filter(([, h]) => !h.deleted))
+  }
+
   async removeKnownHost(id: string): Promise<void> {
-    const next = { ...this.knownHosts.value }
-    delete next[id]
-    await this.knownHosts.set(next)
+    const entry = this.knownHosts.value[id]
+    if (!entry || entry.deleted) return
+    await this.knownHosts.set({ ...this.knownHosts.value, [id]: { ...entry, deleted: true, updatedAt: Date.now() } })
+    this.changed()
+  }
+
+  // Sync
+
+  /** Everything that is synced, including tombstones and the secrets from the vault. */
+  exportSyncState(): SyncState {
+    return {
+      v: 1,
+      profiles: this.profiles.all().map((p) => {
+        const password = p.deleted ? undefined : this.vault.getPassword(p.id)
+        return password === undefined ? p : { ...p, password }
+      }),
+      keys: this.keys.all().map((k) => (k.deleted ? k : { ...k, ...this.vault.getKey(k.id) })),
+      snippets: this.snippets.all(),
+      knownHosts: this.knownHosts.value,
+      settings: this.getSettings()
+    }
+  }
+
+  /**
+   * Merges data from the server into the local files and the vault. Merges again with what is on disk right
+   * now, so a change made while sync was talking to the server is not lost.
+   */
+  async applySyncState(incoming: SyncState): Promise<void> {
+    const s = mergeState(this.exportSyncState(), incoming)
+    const checkId = (id: unknown) => {
+      if (!isSafeId(id)) throw new Error('The synced data contains an invalid id')
+    }
+
+    const passwords: Record<string, string> = {}
+    const profiles = s.profiles.map(({ password, ...raw }) => {
+      checkId(raw.id)
+      if (raw.deleted) return tombstone(raw)
+      const p = validateProfile(raw)
+      if (typeof password === 'string' && p.authType === 'password') passwords[p.id] = password
+      return p
+    })
+
+    const secrets: Record<string, KeySecret> = {}
+    const keys = s.keys.map(({ privateKey, passphrase, ...raw }) => {
+      checkId(raw.id)
+      if (raw.deleted) return tombstone(raw)
+      const k = validateKeyMeta(raw)
+      if (typeof privateKey === 'string') {
+        secrets[k.id] = { privateKey, ...(typeof passphrase === 'string' && passphrase ? { passphrase } : {}) }
+      }
+      return k
+    })
+
+    const snippets = s.snippets.map((raw) => {
+      checkId(raw.id)
+      return raw.deleted ? tombstone(raw) : validateSnippet(raw)
+    })
+    const knownHosts = validateKnownHosts(s.knownHosts)
+    const settings = validateSettings(s.settings)
+
+    // Every set() below updates memory right away, before its write finishes. Starting them all before the
+    // first await means no other change can slip in between and see half-applied data.
+    await Promise.all([
+      this.profiles.doc.set(profiles),
+      this.keys.doc.set(keys),
+      this.snippets.doc.set(snippets),
+      this.knownHosts.set(knownHosts),
+      this.settings.set(settings),
+      this.vault.replaceSecrets(passwords, secrets)
+    ])
   }
 
   // Sessions
@@ -282,7 +399,12 @@ export class Core {
         if (!ans.ok || ans.value === undefined) throw new Error('Cancelled')
         const value = ans.value
         auth.password = value
-        if (ans.save) persist = () => this.vault.setPassword(p.id, value)
+        if (ans.save) {
+          persist = async () => {
+            await this.vault.setPassword(p.id, value)
+            await this.touchProfile(p.id)
+          }
+        }
       }
     } else {
       const keyId = p.keyId!
@@ -296,7 +418,14 @@ export class Core {
         const value = ans.value
         importKey(secret.privateKey, value) // throws KeyParseError on a wrong passphrase
         auth.passphrase = value
-        if (ans.save) persist = () => this.vault.setKey(keyId, { ...secret, passphrase: value })
+        if (ans.save) {
+          persist = async () => {
+            await this.vault.setKey(keyId, { ...secret, passphrase: value })
+            const meta = this.keys.get(keyId)
+            if (meta) await this.keys.upsert(meta)
+            this.changed()
+          }
+        }
       }
     }
 
@@ -316,8 +445,9 @@ export class Core {
           if (!ans.ok || signal.aborted) return false
           await this.knownHosts.set({
             ...this.knownHosts.value,
-            [hostId(p.host, p.port)]: { algo, fingerprint, addedAt: new Date().toISOString() }
+            [hostId(p.host, p.port)]: { algo, fingerprint, addedAt: new Date().toISOString(), updatedAt: Date.now() }
           })
+          this.changed()
           return true
         }
       },

@@ -176,7 +176,7 @@ describe('Core snippet export and import', () => {
     )
     const [s] = core.snippets.list()
     expect(s.id).not.toBe('constructor')
-    expect(Object.keys(s).sort()).toEqual(['command', 'id', 'name'])
+    expect(Object.keys(s).sort()).toEqual(['command', 'id', 'name', 'updatedAt'])
   })
 
   it('rejects broken files as a whole and imports nothing', async () => {
@@ -286,9 +286,9 @@ describe('Core storage', () => {
   it('stores host-specific snippets and rejects unknown hosts', async () => {
     await core.saveProfile(profile(22))
     await core.saveSnippet({ id: 's1', name: 'logs', command: 'tail -f log', profileIds: ['p1', 'p1', ''] })
-    expect(core.snippets.get('s1')).toEqual({ id: 's1', name: 'logs', command: 'tail -f log', profileIds: ['p1'] })
+    expect(core.snippets.get('s1')).toEqual({ id: 's1', name: 'logs', command: 'tail -f log', profileIds: ['p1'], updatedAt: expect.any(Number) })
     await core.saveSnippet({ id: 's2', name: 'ls', command: 'ls', profileIds: [] })
-    expect(core.snippets.get('s2')).toEqual({ id: 's2', name: 'ls', command: 'ls' })
+    expect(core.snippets.get('s2')).toEqual({ id: 's2', name: 'ls', command: 'ls', updatedAt: expect.any(Number) })
     await expect(core.saveSnippet({ id: 's3', name: 'x', command: 'x', profileIds: ['nope'] })).rejects.toThrow(
       'Host not found'
     )
@@ -301,7 +301,7 @@ describe('Core storage', () => {
     await core.saveSnippet({ id: 's2', name: 'b', command: 'b', profileIds: ['p1'] })
     await core.deleteProfile('p1')
     expect(core.snippets.get('s1')?.profileIds).toEqual(['p2'])
-    expect(core.snippets.get('s2')).toEqual({ id: 's2', name: 'b', command: 'b' })
+    expect(core.snippets.get('s2')).toEqual({ id: 's2', name: 'b', command: 'b', updatedAt: expect.any(Number) })
   })
 
   it('refuses to delete a key that a host uses', async () => {

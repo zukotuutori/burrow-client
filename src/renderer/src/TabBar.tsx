@@ -34,7 +34,7 @@ export function TabBar({ tabs, active, statuses, onSelect, onClose, onReorder }:
 
   return (
     <div className="tabbar">
-      <button className={`tab ${active === 'home' ? 'active' : ''}`} onClick={() => onSelect('home')}>
+      <button className={`tab ${active === 'home' ? 'active' : ''}`} title="Hosts, keys, snippets and settings" onClick={() => onSelect('home')}>
         <BurrowMark /> Vault
       </button>
       {tabs.map((t) => (
@@ -52,6 +52,7 @@ export function TabBar({ tabs, active, statuses, onSelect, onClose, onReorder }:
           <span className="tab-title">{t.title}</span>
           <button
             className="tab-close"
+            title="Close tab (middle-click also works)"
             aria-label="Close tab"
             onClick={(e) => {
               e.stopPropagation()

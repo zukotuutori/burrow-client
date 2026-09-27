@@ -49,10 +49,10 @@ export function PromptDialog() {
             <div className="fp mono">{p.check.fingerprint}</div>
           </div>
           <div className="actions">
-            <button className="danger ghost" onClick={() => answer(true)}>
+            <button className="danger ghost" title="Save the new host key and connect anyway" onClick={() => answer(true)}>
               Replace & connect
             </button>
-            <button className="primary" autoFocus onClick={() => answer(false)}>
+            <button className="primary" title="Do not connect" autoFocus onClick={() => answer(false)}>
               Cancel
             </button>
           </div>
@@ -70,10 +70,10 @@ export function PromptDialog() {
           </div>
           <div className="actions">
             {/* Cancel has focus so a stray Enter never trusts a host; trusting takes a deliberate click. */}
-            <button autoFocus onClick={() => answer(false)}>
+            <button title="Do not connect" autoFocus onClick={() => answer(false)}>
               Cancel
             </button>
-            <button className="primary" onClick={() => answer(true)}>
+            <button className="primary" title="Save this host key and connect" onClick={() => answer(true)}>
               Trust & connect
             </button>
           </div>
@@ -98,10 +98,10 @@ export function PromptDialog() {
           Save to vault
         </label>
         <div className="actions">
-          <button type="button" onClick={() => answer(false)}>
+          <button type="button" title="Cancel the connection" onClick={() => answer(false)}>
             Cancel
           </button>
-          <button className="primary" type="submit">
+          <button className="primary" type="submit" title="Connect with this secret">
             Connect
           </button>
         </div>

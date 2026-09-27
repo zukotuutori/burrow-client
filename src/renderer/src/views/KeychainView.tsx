@@ -25,8 +25,8 @@ export function KeychainView() {
       <header className="view-header">
         <h1>Keychain</h1>
         <span className="spacer" />
-        <button onClick={() => setMode('import')}>Import</button>
-        <button className="primary" onClick={() => setMode('generate')}>
+        <button title="Import an existing private key" onClick={() => setMode('import')}>Import</button>
+        <button className="primary" title="Create a new key pair" onClick={() => setMode('generate')}>
           <PlusIcon /> Generate key
         </button>
       </header>
@@ -45,10 +45,10 @@ export function KeychainView() {
                   {k.type} · {k.fingerprint}
                 </div>
               </div>
-              <button onClick={() => run(() => navigator.clipboard.writeText(k.publicKey), 'Public key copied')}>
+              <button title="Copy the public key, e.g. for a server's authorized_keys" onClick={() => run(() => navigator.clipboard.writeText(k.publicKey), 'Public key copied')}>
                 Copy public key
               </button>
-              <button className="danger ghost" onClick={() => remove(k.id, k.name)}>
+              <button className="danger ghost" title="Delete this key from the vault" onClick={() => remove(k.id, k.name)}>
                 Delete
               </button>
             </div>
@@ -85,17 +85,17 @@ function GenerateKeyForm({ onDone }: { onDone: () => void }) {
       </Field>
       <Field label="Type" hint="Ed25519 is the modern default. Pick RSA only for old servers without Ed25519 support.">
         <div className="segmented">
-          <button type="button" className={type === 'ed25519' ? 'on' : ''} onClick={() => setType('ed25519')}>
+          <button type="button" className={type === 'ed25519' ? 'on' : ''} title="Modern, small and fast. Recommended." onClick={() => setType('ed25519')}>
             Ed25519
           </button>
-          <button type="button" className={type === 'rsa' ? 'on' : ''} onClick={() => setType('rsa')}>
+          <button type="button" className={type === 'rsa' ? 'on' : ''} title="For older servers without Ed25519 support" onClick={() => setType('rsa')}>
             RSA 4096
           </button>
         </div>
       </Field>
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="primary" disabled={busy}>
+        <button type="submit" className="primary" title="Create the key and save it in the vault" disabled={busy}>
           {busy ? 'Generating…' : 'Generate'}
         </button>
       </div>
@@ -127,7 +127,7 @@ function ImportKeyForm({ onDone }: { onDone: () => void }) {
       <Field
         label="Private key"
         hint={
-          <button type="button" className="link" onClick={load}>
+          <button type="button" className="link" title="Read the private key from a file" onClick={load}>
             Load from file…
           </button>
         }
@@ -147,7 +147,7 @@ function ImportKeyForm({ onDone }: { onDone: () => void }) {
       </Field>
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="primary">
+        <button type="submit" className="primary" title="Save this key in the vault">
           Import
         </button>
       </div>

@@ -130,7 +130,10 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
   handle('knownHosts:remove', (id) => core.removeKnownHost(str(id, 'id')))
 
   handle('settings:get', () => core.getSettings())
-  handle('settings:save', (s) => core.saveSettings(s))
+  handle('settings:save', async (s) => {
+    await core.saveSettings(s)
+    getWindow()?.setContentProtection(core.getSettings().blockScreenshots)
+  })
 
   handle('sync:status', () => core.sync.status())
   handle('sync:register', (url, user, pw, code) =>

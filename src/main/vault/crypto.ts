@@ -8,6 +8,13 @@ export interface KdfParams {
 
 export const DEFAULT_KDF: KdfParams = { N: 131072, r: 8, p: 1 }
 
+/**
+ * Upper limits for settings read from a vault file, so a tampered file cannot make unlocking use gigabytes of
+ * memory or run for minutes. scrypt needs about 128 * N * r bytes; the defaults use 128 MiB.
+ */
+const MAX_SCRYPT_MEMORY = 1024 ** 3
+const MAX_SCRYPT_P = 4
+
 export interface VaultFile extends KdfParams {
   version: 1
   kdf: 'scrypt'
@@ -71,6 +78,8 @@ export function isVaultFile(x: unknown): x is VaultFile {
     f.version === 1 &&
     f.kdf === 'scrypt' &&
     [f.N, f.r, f.p].every((n) => Number.isInteger(n) && n > 0) &&
+    128 * f.N * f.r <= MAX_SCRYPT_MEMORY &&
+    f.p <= MAX_SCRYPT_P &&
     [f.salt, f.iv, f.tag, f.ciphertext].every((s) => typeof s === 'string')
   )
 }

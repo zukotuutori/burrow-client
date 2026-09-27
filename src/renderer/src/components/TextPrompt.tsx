@@ -27,10 +27,10 @@ export function TextPrompt({
         <h3>{title}</h3>
         <input autoFocus value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => e.key === 'Escape' && onCancel()} />
         <div className="actions">
-          <button type="button" onClick={onCancel}>
+          <button type="button" title="Close without changes" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" className="primary">
+          <button type="submit" className="primary" title={confirmLabel}>
             {confirmLabel}
           </button>
         </div>

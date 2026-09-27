@@ -36,7 +36,7 @@ export function KnownHostsView() {
                 </div>
               </div>
               <span className="muted">{new Date(h.addedAt).toLocaleDateString()}</span>
-              <button className="danger ghost" onClick={() => remove(id)}>
+              <button className="danger ghost" title="Forget this host key. You will be asked to trust it again on the next connection." onClick={() => remove(id)}>
                 Remove
               </button>
             </div>

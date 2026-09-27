@@ -70,10 +70,10 @@ export function HostForm({ profile, onDone }: { profile: Profile; onDone: () => 
       </Field>
       <Field label="Authentication">
         <div className="segmented">
-          <button type="button" className={p.authType === 'password' ? 'on' : ''} onClick={() => set('authType', 'password')}>
+          <button type="button" className={p.authType === 'password' ? 'on' : ''} title="Log in with a password" onClick={() => set('authType', 'password')}>
             Password
           </button>
-          <button type="button" className={p.authType === 'key' ? 'on' : ''} onClick={() => set('authType', 'key')}>
+          <button type="button" className={p.authType === 'key' ? 'on' : ''} title="Log in with a key from the keychain" onClick={() => set('authType', 'key')}>
             Key
           </button>
         </div>
@@ -85,7 +85,7 @@ export function HostForm({ profile, onDone }: { profile: Profile; onDone: () => 
             hasPassword ? (
               <>
                 A password is saved in the vault. Type a new one to replace it, or{' '}
-                <button type="button" className="link" onClick={forget}>
+                <button type="button" className="link" title="Remove the saved password from the vault" onClick={forget}>
                   forget it
                 </button>
                 .
@@ -118,12 +118,12 @@ export function HostForm({ profile, onDone }: { profile: Profile; onDone: () => 
       </Field>
       <div className="form-actions">
         {exists && (
-          <button type="button" className="danger ghost" onClick={remove}>
+          <button type="button" className="danger ghost" title="Delete this host" onClick={remove}>
             Delete
           </button>
         )}
         <span className="spacer" />
-        <button type="submit" className="primary">
+        <button type="submit" className="primary" title="Save this host">
           Save
         </button>
       </div>

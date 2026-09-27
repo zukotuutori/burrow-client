@@ -15,7 +15,7 @@ export function SidePanel({ title, onClose, children }: { title: string; onClose
       <aside className="side-panel">
         <header>
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" title="Close" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </header>

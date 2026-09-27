@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { api } from './api'
 import { useData } from './data'
-import { BurrowMark, CodeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
+import { BookIcon, BurrowMark, CodeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
 import { useAction } from './toast'
 import { HostsView } from './views/HostsView'
 import { KeychainView } from './views/KeychainView'
@@ -11,12 +11,12 @@ import { SnippetsView } from './views/SnippetsView'
 
 type Section = 'hosts' | 'keychain' | 'snippets' | 'knownHosts' | 'settings'
 
-const NAV: { id: Section; label: string; icon: ReactNode }[] = [
-  { id: 'hosts', label: 'Hosts', icon: <ServerIcon /> },
-  { id: 'keychain', label: 'Keychain', icon: <KeyIcon /> },
-  { id: 'snippets', label: 'Snippets', icon: <CodeIcon /> },
-  { id: 'knownHosts', label: 'Known hosts', icon: <ShieldIcon /> },
-  { id: 'settings', label: 'Settings', icon: <SettingsIcon /> }
+const NAV: { id: Section; label: string; hint: string; icon: ReactNode }[] = [
+  { id: 'hosts', label: 'Hosts', hint: 'Saved servers', icon: <ServerIcon /> },
+  { id: 'keychain', label: 'Keychain', hint: 'SSH keys', icon: <KeyIcon /> },
+  { id: 'snippets', label: 'Snippets', hint: 'Saved commands', icon: <CodeIcon /> },
+  { id: 'knownHosts', label: 'Known hosts', hint: 'Trusted server fingerprints', icon: <ShieldIcon /> },
+  { id: 'settings', label: 'Settings', hint: 'Appearance, security and sync', icon: <SettingsIcon /> }
 ]
 
 interface Props {
@@ -43,24 +43,31 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
           <BurrowMark /> Burrow
         </div>
         {NAV.map((n) => (
-          <button key={n.id} className={`nav-item ${section === n.id ? 'active' : ''}`} onClick={() => setSection(n.id)}>
+          <button key={n.id} className={`nav-item ${section === n.id ? 'active' : ''}`} title={n.hint} onClick={() => setSection(n.id)}>
             {n.icon}
             {n.label}
           </button>
         ))}
         <span className="spacer" />
-        <button className="nav-item" onClick={onOpenLocal}>
+        <button className="nav-item" title="Open a shell on this computer in a new tab" onClick={onOpenLocal}>
           <TerminalIcon /> Open terminal
         </button>
-        <button className="nav-item" onClick={onLock}>
+        <button className="nav-item" title="Lock the vault and close all sessions" onClick={onLock}>
           <LockIcon /> Lock vault
+        </button>
+        <button
+          className="nav-item"
+          title="Open the documentation in your browser"
+          onClick={() => void api.openExternal('https://zukotuutori.dev/burrow-client-documentation')}
+        >
+          <BookIcon /> Documentation
         </button>
       </nav>
       <main className="home-main">
         {loadErrors.map((e) => (
           <div key={e.file} className="banner">
             <span className="spacer">{e.file} could not be read. Changes to it are blocked until you reset it.</span>
-            <button onClick={() => reset(e.file)}>Reset</button>
+            <button title="Back up the unreadable file and start it fresh" onClick={() => reset(e.file)}>Reset</button>
           </div>
         ))}
         {section === 'hosts' && <HostsView onConnect={onConnect} visible={visible} />}

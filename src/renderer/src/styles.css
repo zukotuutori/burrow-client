@@ -287,6 +287,7 @@ input[type='checkbox'] { width: auto; }
 .toasts { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 30; }
 .toast { background: var(--surface-3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; box-shadow: var(--shadow); max-width: 380px; }
 .toast.error { border-color: var(--danger); }
+.tooltip { position: fixed; z-index: 40; pointer-events: none; max-width: 280px; background: var(--surface-3); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 12px; line-height: 1.4; box-shadow: var(--shadow); }
 
 /* Session */
 .session { flex: 1; display: flex; flex-direction: column; min-width: 0; }

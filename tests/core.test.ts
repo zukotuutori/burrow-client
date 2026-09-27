@@ -259,6 +259,15 @@ describe('Core settings', () => {
     await expect(core.saveSettings({ ...base, showHostStatus: 'yes' })).rejects.toThrow(/host status/)
   })
 
+  it('blocks screenshots by default and validates the setting', async () => {
+    const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', autoLockMinutes: 15, showHostStatus: false }
+    await core.saveSettings(base)
+    expect(core.getSettings().blockScreenshots).toBe(true)
+    await core.saveSettings({ ...base, blockScreenshots: false })
+    expect(core.getSettings().blockScreenshots).toBe(false)
+    await expect(core.saveSettings({ ...base, blockScreenshots: 'no' })).rejects.toThrow(/screenshot/)
+  })
+
   it('validates the auto-lock minutes', async () => {
     const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', showHostStatus: false }
     await core.saveSettings({ ...base, autoLockMinutes: 0 })

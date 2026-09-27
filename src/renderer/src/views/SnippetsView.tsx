@@ -39,11 +39,11 @@ export function SnippetsView() {
         <h1>Snippets</h1>
         <input className="search" placeholder="Search snippets" value={query} onChange={(e) => setQuery(e.target.value)} />
         <span className="spacer" />
-        <button onClick={importFile}>Import</button>
-        <button onClick={exportFile} disabled={snippets.length === 0}>
+        <button title="Add snippets from a JSON file" onClick={importFile}>Import</button>
+        <button title="Save all snippets to a JSON file" onClick={exportFile} disabled={snippets.length === 0}>
           Export
         </button>
-        <button className="primary" onClick={() => setEditing({ id: crypto.randomUUID(), name: '', command: '' })}>
+        <button className="primary" title="Create a new snippet" onClick={() => setEditing({ id: crypto.randomUUID(), name: '', command: '' })}>
           <PlusIcon /> New snippet
         </button>
       </header>
@@ -127,10 +127,10 @@ export function SnippetForm({ snippet, exists, onDone }: { snippet: Snippet; exi
       </Field>
       <Field label="Show on">
         <div className="segmented">
-          <button type="button" className={specific ? '' : 'on'} onClick={() => setSpecific(false)}>
+          <button type="button" className={specific ? '' : 'on'} title="Show this snippet in every session" onClick={() => setSpecific(false)}>
             All hosts
           </button>
-          <button type="button" className={specific ? 'on' : ''} onClick={() => setSpecific(true)}>
+          <button type="button" className={specific ? 'on' : ''} title="Show this snippet only for the hosts you pick" onClick={() => setSpecific(true)}>
             Specific hosts
           </button>
         </div>
@@ -151,12 +151,12 @@ export function SnippetForm({ snippet, exists, onDone }: { snippet: Snippet; exi
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         {exists && (
-          <button type="button" className="danger ghost" onClick={remove}>
+          <button type="button" className="danger ghost" title="Delete this snippet" onClick={remove}>
             Delete
           </button>
         )}
         <span className="spacer" />
-        <button type="submit" className="primary">
+        <button type="submit" className="primary" title="Save this snippet">
           Save
         </button>
       </div>

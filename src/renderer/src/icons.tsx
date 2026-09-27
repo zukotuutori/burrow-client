@@ -61,6 +61,11 @@ export const LockIcon = () => (
     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
   </Svg>
 )
+export const BookIcon = () => (
+  <Svg>
+    <path d="M4 19V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h14" />
+  </Svg>
+)
 export const PlusIcon = () => (
   <Svg>
     <path d="M12 5v14M5 12h14" />

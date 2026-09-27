@@ -63,10 +63,10 @@ function LoggedOut({ lastError, onDone }: { lastError?: string; onDone: () => Pr
       </p>
       {lastError && <p className="error">{lastError}</p>}
       <div className="segmented">
-        <button type="button" className={register ? '' : 'on'} onClick={() => setMode('login')}>
+        <button type="button" className={register ? '' : 'on'} title="Use an existing sync account" onClick={() => setMode('login')}>
           Log in
         </button>
-        <button type="button" className={register ? 'on' : ''} onClick={() => setMode('register')}>
+        <button type="button" className={register ? 'on' : ''} title="Register a new sync account" onClick={() => setMode('register')}>
           Create account
         </button>
       </div>
@@ -98,7 +98,12 @@ function LoggedOut({ lastError, onDone }: { lastError?: string; onDone: () => Pr
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="primary" disabled={busy || !server || !user || !password || weak || (register && (!repeat || !code))}>
+        <button
+          type="submit"
+          className="primary"
+          title={register ? 'Create the account and start syncing' : 'Log in and start syncing'}
+          disabled={busy || !server || !user || !password || weak || (register && (!repeat || !code))}
+        >
           {busy ? 'Working…' : register ? 'Create account' : 'Log in'}
         </button>
       </div>
@@ -128,17 +133,17 @@ function LoggedIn({ status }: { status: SyncStatus }) {
         <p className="muted">{status.lastSyncAt ? `Last synced ${new Date(status.lastSyncAt).toLocaleString()}` : 'Not synced yet'}</p>
       )}
       <div className="form-actions">
-        <button type="button" className="primary" disabled={busy} onClick={syncNow}>
+        <button type="button" className="primary" title="Upload and download changes now" disabled={busy} onClick={syncNow}>
           {busy ? 'Syncing…' : 'Sync now'}
         </button>
-        <button type="button" onClick={() => setPanel(panel === 'password' ? 'none' : 'password')}>
+        <button type="button" title="Change the password of your sync account" onClick={() => setPanel(panel === 'password' ? 'none' : 'password')}>
           Change account password
         </button>
         <span className="spacer" />
-        <button type="button" onClick={() => run(() => api.sync.logout())}>
+        <button type="button" title="Stop syncing on this device. Local data stays." onClick={() => run(() => api.sync.logout())}>
           Log out
         </button>
-        <button type="button" className="danger ghost" onClick={() => setPanel(panel === 'delete' ? 'none' : 'delete')}>
+        <button type="button" className="danger ghost" title="Delete your sync account and its data on the server" onClick={() => setPanel(panel === 'delete' ? 'none' : 'delete')}>
           Delete account
         </button>
       </div>
@@ -188,7 +193,7 @@ function ChangeAccountPassword({ onDone }: { onDone: () => void }) {
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="primary" disabled={busy || !current || weak || !repeat}>
+        <button type="submit" className="primary" title="Set the new account password" disabled={busy || !current || weak || !repeat}>
           {busy ? 'Changing…' : 'Change account password'}
         </button>
       </div>
@@ -227,7 +232,7 @@ function DeleteAccount() {
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="danger" disabled={busy || !password}>
+        <button type="submit" className="danger" title="Permanently delete the account and all synced data on the server" disabled={busy || !password}>
           {busy ? 'Deleting…' : 'Delete account and server data'}
         </button>
       </div>

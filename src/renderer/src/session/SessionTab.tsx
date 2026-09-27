@@ -136,11 +136,11 @@ export function SessionTab({ profileId, active, onStatus, onEmpty }: Props) {
         <button className="icon-btn" title={`Split down (${SHORTCUT_LABELS.splitDown})`} onClick={() => act('splitDown')}>
           <SplitDownIcon />
         </button>
-        <button className={`toggle ${showSnippets ? 'on' : ''}`} onClick={() => setShowSnippets((s) => !s)}>
+        <button className={`toggle ${showSnippets ? 'on' : ''}`} title="Show or hide saved commands" onClick={() => setShowSnippets((s) => !s)}>
           <CodeIcon /> Snippets
         </button>
         {profileId && (
-          <button className={`toggle ${showSftp ? 'on' : ''}`} onClick={() => setShowSftp((s) => !s)}>
+          <button className={`toggle ${showSftp ? 'on' : ''}`} title="Show or hide the remote file browser" onClick={() => setShowSftp((s) => !s)}>
             <FolderIcon /> SFTP
           </button>
         )}

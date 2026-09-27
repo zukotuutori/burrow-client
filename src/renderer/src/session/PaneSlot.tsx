@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
+import { SHORTCUT_LABELS } from './shortcuts'
 import { useHostStatus, type TerminalHost } from './terminalHost'
 
 export function PaneSlot({ host, focused, onClose }: { host: TerminalHost; focused: boolean; onClose: () => void }) {
@@ -23,14 +24,14 @@ export function PaneSlot({ host, focused, onClose }: { host: TerminalHost; focus
         <div className="pane-overlay">
           <p>{status.reason}</p>
           <div className="actions">
-            <button onClick={onClose}>Close</button>
-            <button className="primary" onClick={() => void host.connect()}>
+            <button title="Close this pane" onClick={onClose}>Close</button>
+            <button className="primary" title={host.profileId ? 'Connect to the host again' : 'Start a new local shell'} onClick={() => void host.connect()}>
               {host.profileId ? 'Reconnect' : 'Restart'}
             </button>
           </div>
         </div>
       )}
-      <button className="pane-close" title="Close pane" aria-label="Close pane" onClick={onClose}>
+      <button className="pane-close" title={`Close pane (${SHORTCUT_LABELS.closePane})`} aria-label="Close pane" onClick={onClose}>
         ✕
       </button>
     </div>

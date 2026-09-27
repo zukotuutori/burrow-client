@@ -57,6 +57,8 @@ export interface Settings extends Syncable {
   autoLockMinutes: number
   /** Regularly check whether each host accepts connections and show it on the host cards. */
   showHostStatus: boolean
+  /** Keep the window out of screenshots and screen recordings (macOS and Windows only). */
+  blockScreenshots: boolean
 }
 
 export interface KeyMeta extends Syncable {

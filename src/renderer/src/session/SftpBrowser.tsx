@@ -107,15 +107,15 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
         </button>
       </header>
       <div className="sftp-actions">
-        <button onClick={upload}>Upload</button>
-        <button disabled={!sel || sel.isDir} onClick={download}>
+        <button title="Upload files to this folder (you can also drop files here)" onClick={upload}>Upload</button>
+        <button title="Download the selected file" disabled={!sel || sel.isDir} onClick={download}>
           Download
         </button>
-        <button onClick={() => setDialog({ kind: 'mkdir' })}>New folder</button>
-        <button disabled={!sel} onClick={() => sel && setDialog({ kind: 'rename', entry: sel })}>
+        <button title="Create a folder here" onClick={() => setDialog({ kind: 'mkdir' })}>New folder</button>
+        <button title="Rename the selected item" disabled={!sel} onClick={() => sel && setDialog({ kind: 'rename', entry: sel })}>
           Rename
         </button>
-        <button className="danger ghost" disabled={!sel} onClick={remove}>
+        <button className="danger ghost" title="Delete the selected item" disabled={!sel} onClick={remove}>
           Delete
         </button>
       </div>

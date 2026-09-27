@@ -30,7 +30,11 @@ registerAppScheme()
 
 let win: BrowserWindow | null = null
 let cancelPrompts = (): void => undefined
-const core = new Core(app.getPath('userData'), (channel, ...args) => win?.webContents.send(channel, ...args))
+const core = new Core(app.getPath('userData'), (channel, ...args) => {
+  // A sync can bring a changed screenshot setting from another device.
+  if (channel === 'sync:changed') win?.setContentProtection(core.getSettings().blockScreenshots)
+  win?.webContents.send(channel, ...args)
+})
 
 /** Locks the vault, closes sessions and prompts, and sends the window back to the unlock screen. */
 function lockVault(): void {
@@ -57,8 +61,9 @@ function createWindow(): void {
       devTools: !app.isPackaged
     }
   })
-  // Keep the window out of screenshots and screen recordings (macOS and Windows; not supported on Linux).
-  win.setContentProtection(true)
+  // Keep the window out of screenshots and screen recordings unless turned off in settings
+  // (macOS and Windows; not supported on Linux).
+  win.setContentProtection(core.getSettings().blockScreenshots)
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)) void shell.openExternal(url)
     return { action: 'deny' }

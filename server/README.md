@@ -1,161 +1,149 @@
-# Burrow Sync Server auf dem VPS
+# Burrow sync server
 
-Der Server speichert pro Konto einen verschlüsselten Datenblock. Verschlüsselt wird in der App, der Server hat keinen Schlüssel und kann nichts lesen.
+The sync server stores one encrypted blob per account. The app encrypts everything before uploading it and never sends the key, so the server cannot read your hosts, passwords, keys or snippets.
 
-Er läuft komplett getrennt von deiner Website: eigener Ordner, eigenes Docker-Projekt, eigenes Netz, eigene Datenbank, kein offener Port. Von außen kommt man nur über deinen Reverse Proxy (den Dienst, der schon HTTPS für deine Website macht) an ihn heran.
+What the server does see: user names, a SHA-256 hash of each account's login key, the size and time of each upload, and the IP addresses of the devices that connect.
 
-In den Befehlen ersetzt du:
+It is a single file (`server.js`) with no dependencies. It needs Node.js 24 or newer for the built-in `node:sqlite`.
 
-- `DEINUSER` durch den Benutzer, mit dem du dich sonst per SSH auf dem VPS anmeldest
-- `DEINE-VPS-IP` durch die IP deines VPS (steht im IONOS Cloud Panel)
-- `sync.deinedomain.de` durch die Domain, die du für den Sync nehmen willst
+## Configuration
 
-Falls du in `~/.ssh/config` einen Kurznamen für den Server hast (z. B. `ssh vps`), kannst du den überall statt `DEINUSER@DEINE-VPS-IP` nehmen.
+| Variable | Default | Meaning |
+|---|---|---|
+| `PORT` | `3000` | Port the server listens on. |
+| `DB_PATH` | `./sync.db` | SQLite database file. |
+| `REGISTRATION_CODE` | empty | Invite code needed to create an account. Empty turns registration off. |
+| `TRUST_PROXY` | off | Set to `1` only when the server can be reached through your reverse proxy alone, and that proxy overwrites `X-Real-IP` with the client's address. The address is used to slow down repeated failed logins. |
 
-Die Befehle kopierst du einfach ins Terminal und drückst Enter.
+The server speaks plain HTTP and has no TLS of its own. Always put it behind a reverse proxy that handles HTTPS, and never expose its port to the internet directly. The app refuses sync servers that don't use HTTPS, except `localhost`.
+
+## Trying it locally
+
+```bash
+cd server
+REGISTRATION_CODE=test node server.js
+```
+
+In the app, go to **Settings → Sync → Create account** and use `http://localhost:3000` as the server and `test` as the invite code.
 
 ---
 
-## Schritt 1: DNS-Eintrag anlegen
+## Running it on a server with Docker
 
-1. Im IONOS-Kundenbereich auf **Domains & SSL** gehen und deine Domain anklicken.
-2. **DNS** öffnen, **Record hinzufügen**, Typ **A**.
-3. Hostname: `sync`, Zeigt auf: `DEINE-VPS-IP`. Speichern.
+This guide assumes a Linux server that already runs a reverse proxy doing HTTPS for other sites, like Nginx Proxy Manager, Caddy, Traefik or nginx. The sync server gets its own folder, Docker Compose project, internal network and database, and publishes no port. Only the reverse proxy can reach it.
 
-Du kannst auch eine ganz andere Domain als die deiner Website nehmen. Beide zeigen auf dieselbe VPS-IP, der Proxy unterscheidet sie am Namen. Für die Domain selbst (ohne `sync.` davor) ist der Hostname `@`.
+In the commands, replace:
 
-**Achtung bei IONOS:** Neue Domains haben oft schon A- und **AAAA**-Einträge, die auf eine IONOS-Parkseite zeigen. Lösch die alten Einträge für diesen Hostnamen. Einen AAAA-Eintrag entweder löschen oder auf die IPv6-Adresse deines VPS setzen, sonst landen Anfragen per IPv6 auf der Parkseite und es gibt kein Zertifikat.
+- `USER` with the account you use to log in to the server over SSH
+- `SERVER_IP` with the server's IP address (or a host alias from your `~/.ssh/config`)
+- `sync.example.com` with the domain you want to use for sync
 
-Das kann ein paar Minuten dauern. Prüfen kannst du es auf deinem Mac mit:
+### Step 1: DNS
+
+At your DNS provider, add an **A** record for `sync` (or whatever name you want) that points to `SERVER_IP`.
+
+New domains often come with A and **AAAA** records that point to the registrar's parking page. Remove those for this name. Either delete the AAAA record or point it at your server's IPv6 address. Otherwise requests over IPv6 end up on the parking page and the proxy can't get a certificate.
+
+Check it from your computer:
 
 ```bash
-dig +short sync.deinedomain.de
-dig +short AAAA sync.deinedomain.de
+dig +short sync.example.com
 ```
 
-Beim ersten muss deine VPS-IP rauskommen. Beim zweiten entweder nichts oder die IPv6-Adresse deines VPS.
-
----
-
-## Schritt 2: Dateien auf den VPS kopieren
-
-Dein Benutzer darf nicht direkt nach `/opt` schreiben, und `scp` kann auf dem Server kein `sudo` benutzen. Deshalb kopierst du die Dateien erst in dein Home-Verzeichnis auf dem VPS und schiebst sie dann mit root-Rechten an ihren Platz.
-
-Auf deinem **Mac**, im Terminal, im Ordner des Repos (`ssh-client`):
-
 ```bash
-ssh DEINUSER@DEINE-VPS-IP mkdir -p burrow-sync
-scp server/* server/.dockerignore DEINUSER@DEINE-VPS-IP:~/burrow-sync/
+dig +short AAAA sync.example.com
 ```
 
-Der erste Befehl legt auf dem VPS den Ordner `~/burrow-sync` an, der zweite kopiert die Dateien aus `server` hinein. Versteckte Dateien wie eine lokale `.env` nimmt `server/*` nicht mit, nur die `.dockerignore` wird extra angegeben.
+The first must print your server's IP. The second must print nothing or your server's IPv6 address. Changes can take a few minutes to show up.
 
-Jetzt **auf den VPS** verbinden und root werden:
+### Step 2: Copy the files to the server
+
+`scp` can't use `sudo`, so the files go to your home folder first and are then moved into place as root. From the repository folder on your computer:
 
 ```bash
-ssh DEINUSER@DEINE-VPS-IP
+ssh USER@SERVER_IP mkdir -p burrow-sync
+```
+
+```bash
+scp server/* server/.dockerignore USER@SERVER_IP:~/burrow-sync/
+```
+
+`server/*` skips hidden files like a local `.env`, which is why `.dockerignore` is listed on its own.
+
+Then log in to the server and become root. All later commands on the server run as root.
+
+```bash
+ssh USER@SERVER_IP
 ```
 
 ```bash
 sudo -i
 ```
 
-`sudo -i` fragt nach deinem Passwort und öffnet eine Sitzung als root. Das siehst du am `#` statt `$` am Ende der Eingabezeile. **Alle weiteren Befehle auf dem VPS führst du in dieser root-Sitzung aus.** Wenn du dich später neu verbindest, erst wieder `ssh` und dann `sudo -i`.
-
-Die Dateien an ihren Platz schieben, root als Besitzer eintragen und den Ordner so einstellen, dass nur root hineinschauen kann (`DEINUSER` hier wieder durch deinen Benutzer ersetzen):
+Move the files into place and make the folder readable by root only:
 
 ```bash
-mv /home/DEINUSER/burrow-sync /opt/burrow-sync
+mv /home/USER/burrow-sync /opt/burrow-sync
 chown -R root:root /opt/burrow-sync
 chmod 700 /opt/burrow-sync
 ```
 
-Prüfen, ob Docker Compose da ist:
+Check that Docker Compose v2 is installed:
 
 ```bash
 docker compose version
 ```
 
-Da sollte eine Version stehen (v2 oder höher). Wenn "unknown command" kommt, sag mir Bescheid.
-
----
-
-## Schritt 3: Herausfinden, welcher Proxy bei dir läuft
-
-Der Proxy ist das Programm, das Anfragen an deine Domain annimmt, HTTPS macht und sie an die Website weitergibt. Wir müssen wissen, welches Programm das ist und wo seine Einstellungen liegen.
+### Step 3: Find your reverse proxy
 
 ```bash
 docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
 ```
 
-Du siehst alle laufenden Container. Such den, bei dem unter **PORTS** `0.0.0.0:443->...` steht. Das ist dein Proxy. Am **IMAGE** erkennst du, welcher es ist:
+The container with `0.0.0.0:443->...` under **PORTS** is your proxy. Its **IMAGE** tells you which one it is:
 
-| Image enthält | Dein Proxy | Weiter bei |
+| Image contains | Proxy | Continue at |
 |---|---|---|
-| `jc21/nginx-proxy-manager` | Nginx Proxy Manager | Schritt 5A |
-| `caddy` | Caddy | Schritt 5B |
-| `traefik` | Traefik | Schritt 5C |
-| `nginx` | nginx | Schritt 5D |
+| `jc21/nginx-proxy-manager` | Nginx Proxy Manager | 5A |
+| `caddy` | Caddy | 5B |
+| `traefik` | Traefik | 5C |
+| `nginx` | nginx | 5D |
 
-**Kein Container hat Port 443?** Dann läuft der Proxy direkt auf dem Server und nicht in Docker. Prüf das mit:
+The proxy container's name (first column) is called `PROXY` below.
+
+If no container uses port 443, the proxy runs directly on the server. Find out which one:
 
 ```bash
 systemctl status nginx caddy apache2 --no-pager 2>/dev/null | grep -E '●|Active'
 ```
 
-Der Dienst mit `active (running)` ist dein Proxy. Weiter bei **Schritt 5E**.
+In that case skip step 4 and go straight to **5E**.
 
-Merk dir den **Namen** deines Proxy-Containers (erste Spalte), du brauchst ihn gleich. Im Folgenden steht dafür `PROXY`.
-
-### Wo liegen die Dateien des Proxys?
-
-Für 5A bis 5D brauchst du den Ordner, in dem die `docker-compose.yml` des Proxys liegt:
+For 5A to 5D you need the folder that holds the proxy's Compose file, called `PROXY_DIR` below:
 
 ```bash
 docker inspect PROXY --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}'
 ```
 
-Das gibt einen Pfad aus, z. B. `/root/website`. Das ist der Ordner. Im Folgenden steht dafür `PROXY-ORDNER`.
+If this prints nothing, the proxy wasn't started with Compose and you'll need to attach it to the network from step 4 your own way (`docker network connect burrow-sync PROXY` works until the container is recreated).
 
-Wenn da nichts rauskommt, wurde der Proxy ohne Compose gestartet. Dann schick mir die Ausgabe von `docker inspect PROXY` und ich sag dir, wie es weitergeht.
-
-Welche Dateien der Proxy von außen bekommt (z. B. Caddyfile oder nginx-Konfiguration), siehst du so:
+To see which config files the proxy reads from the host (left is the path on the server, right is the path in the container):
 
 ```bash
 docker inspect PROXY --format '{{range .Mounts}}{{.Source}}  ->  {{.Destination}}{{println}}{{end}}'
 ```
 
-Links steht der Pfad auf deinem VPS (den bearbeitest du), rechts der Pfad im Container.
+Make a backup copy of every file before you edit it.
 
-### Kurz: Dateien bearbeiten mit nano
+### Step 4: Start the sync server
 
-```bash
-nano /pfad/zur/datei
-```
-
-Mit den Pfeiltasten bewegen, ganz normal tippen. **Speichern:** `Ctrl+O`, dann `Enter`. **Beenden:** `Ctrl+X`.
-
-Bevor du eine Datei änderst, mach eine Sicherungskopie:
-
-```bash
-cp /pfad/zur/datei /pfad/zur/datei.backup
-```
-
----
-
-## Schritt 4: Sync-Server starten
-
-**Wenn du in Schritt 3 bei 5E gelandet bist** (Proxy läuft direkt auf dem Server), geh direkt zu **Schritt 5E**. Dort startest du den Server anders.
-
-Für alle anderen:
+Create an internal network. `--internal` means containers on it can't reach the internet. Only the sync server and your proxy will join it.
 
 ```bash
 docker network create --internal burrow-sync
 ```
 
-Das legt ein eigenes Netz an. `--internal` heißt, was darin hängt, kommt nicht ins Internet. Nur der Sync-Server und dein Proxy kommen da rein, die Website nicht.
-
-Dann den Einladungscode erzeugen und starten:
+Create an invite code and start the server:
 
 ```bash
 cd /opt/burrow-sync
@@ -165,60 +153,47 @@ cat .env
 docker compose up -d --build
 ```
 
-**Schreib dir den Code aus `cat .env` auf**, den brauchst du in Schritt 7.
+Note the code that `cat .env` prints. You need it in step 7.
 
-Nach etwa 30 Sekunden:
+After about 30 seconds, `docker compose ps` should show `healthy` under STATUS. If it doesn't, `docker compose logs` shows why.
 
-```bash
-docker compose ps
-```
+### Step 5: Connect the proxy
 
-Unter STATUS muss `healthy` stehen. Wenn nicht: `docker compose logs` und mir die Ausgabe schicken.
+Only follow the part for your proxy.
 
----
+#### For 5A to 5D: add the proxy to the sync network
 
-## Schritt 5: Proxy anbinden
-
-Mach nur den Unterpunkt, der zu deinem Proxy passt.
-
-### Bei 5A bis 5D zuerst: Proxy ins Sync-Netz hängen
-
-Das gilt für alle Proxys in Docker. Öffne die Compose-Datei des Proxys:
+Open the proxy's Compose file (it may also be called `compose.yml` or `docker-compose.yaml`):
 
 ```bash
-cd PROXY-ORDNER
-ls
+cd PROXY_DIR
 cp docker-compose.yml docker-compose.yml.backup
 nano docker-compose.yml
 ```
 
-(Falls die Datei bei `ls` anders heißt, z. B. `compose.yml` oder `docker-compose.yaml`, nimm diesen Namen.)
+Find the proxy's service under `services:`.
 
-In der Datei findest du unter `services:` den Eintrag für den Proxy (z. B. `npm:`, `caddy:`, `traefik:` oder `nginx:`). Da passiert Folgendes:
-
-**Fall 1: Der Proxy-Eintrag hat schon eine Zeile `networks:`.** Füg darunter `- burrow-sync` als weiteren Eintrag an:
+If it already has a `networks:` list, add `burrow-sync` to it:
 
 ```yaml
   caddy:
     image: caddy:2
     networks:
-      - web            # war schon da
-      - burrow-sync    # neu
+      - web            # was already there
+      - burrow-sync    # new
 ```
 
-**Fall 2: Der Proxy-Eintrag hat keine Zeile `networks:`.** Füg beide Zeilen hinzu, **auch `default`**. Sonst verliert der Proxy die Verbindung zu deiner Website:
+If it has no `networks:` list, add one with **both** `default` and `burrow-sync`. Without `default` the proxy loses its connection to your other services:
 
 ```yaml
   caddy:
     image: caddy:2
     networks:
-      - default        # wichtig, damit die Website erreichbar bleibt
+      - default
       - burrow-sync
 ```
 
-Achte auf die Einrückung: `networks:` steht auf derselben Höhe wie `image:`, die Einträge darunter zwei Leerzeichen weiter rechts. Keine Tabs, nur Leerzeichen.
-
-**Dann ganz unten in der Datei** (ganz links, ohne Einrückung). Wenn es schon einen Block `networks:` ganz links gibt, häng nur die zwei Zeilen `burrow-sync:` und `external: true` darunter:
+At the bottom of the file, at the top level, declare the network. If a top-level `networks:` block already exists, add just the two inner lines to it:
 
 ```yaml
 networks:
@@ -226,140 +201,94 @@ networks:
     external: true
 ```
 
-Speichern, dann prüfen und neu starten:
+Check the file and restart:
 
 ```bash
 docker compose config --quiet && docker compose up -d
 ```
 
-Wenn `config` einen Fehler meldet, ist meistens die Einrückung falsch. Mit `cp docker-compose.yml.backup docker-compose.yml` kommst du zurück zum alten Stand.
+An error from `config` usually means wrong indentation (spaces only, no tabs). `cp docker-compose.yml.backup docker-compose.yml` restores the old file.
 
-Prüfen, ob der Proxy den Sync-Server jetzt sieht:
+Check who is on the network. You should see exactly two names, `burrow-sync` and your proxy:
 
 ```bash
 docker network inspect burrow-sync --format '{{range .Containers}}{{.Name}} {{end}}'
 ```
 
-Da müssen genau zwei Namen stehen: `burrow-sync` und dein Proxy. Deine Website darf hier **nicht** auftauchen.
+#### 5A: Nginx Proxy Manager
 
-Jetzt weiter mit dem Unterpunkt für deinen Proxy.
+1. Open the admin UI, usually `http://SERVER_IP:81`.
+2. Go to **Hosts → Proxy Hosts → Add Proxy Host**.
+3. On the **Details** tab set Domain Names to `sync.example.com`, Scheme to `http`, Forward Hostname / IP to `burrow-sync`, Forward Port to `3000`, and tick **Block Common Exploits**.
+4. On the **SSL** tab choose **Request a new SSL Certificate** and tick **Force SSL** and **HTTP/2 Support**.
+5. Save. The certificate is issued within a few seconds.
 
-### 5A: Nginx Proxy Manager
+Nginx Proxy Manager sets `X-Real-IP` to the client's address by default. Continue at step 6.
 
-Nginx Proxy Manager wird über eine Weboberfläche bedient, nicht über Dateien.
+#### 5B: Caddy
 
-1. Öffne im Browser die Oberfläche. Das ist meist `http://DEINE-VPS-IP:81` (in `docker ps` steht der Port bei `...->81/tcp`).
-2. **Hosts → Proxy Hosts → Add Proxy Host**.
-3. Tab **Details**:
-   - Domain Names: `sync.deinedomain.de`
-   - Scheme: `http`
-   - Forward Hostname / IP: `burrow-sync`
-   - Forward Port: `3000`
-   - **Block Common Exploits** anhaken
-4. Tab **SSL**: **Request a new SSL Certificate**, **Force SSL** und **HTTP/2 Support** anhaken, E-Mail eintragen, Bedingungen akzeptieren.
-5. **Save**. Das Zertifikat holt er sich selbst, das dauert ein paar Sekunden.
-
-Weiter bei Schritt 6.
-
-### 5B: Caddy
-
-Such in der Ausgabe von `docker inspect PROXY --format ...Mounts...` (Schritt 3) die Zeile, die rechts auf `/etc/caddy/Caddyfile` zeigt. Links steht dein Caddyfile. (Zeigt sie rechts nur auf `/etc/caddy`, liegt das Caddyfile im Ordner links.) Öffnen:
-
-```bash
-cp /pfad/zum/Caddyfile /pfad/zum/Caddyfile.backup
-nano /pfad/zum/Caddyfile
-```
-
-Ganz unten einen neuen Block einfügen:
+In the mounts output from step 3, find the line whose right side is `/etc/caddy/Caddyfile` (or `/etc/caddy`). The left side is your Caddyfile. Add this block at the end:
 
 ```
-sync.deinedomain.de {
+sync.example.com {
 	reverse_proxy burrow-sync:3000 {
 		header_up X-Real-IP {remote_host}
 	}
 }
 ```
 
-Speichern, dann Caddy die neue Datei laden lassen:
+Reload Caddy. It gets the certificate on its own.
 
 ```bash
 docker exec PROXY caddy reload --config /etc/caddy/Caddyfile
 ```
 
-Kein Fehler heißt: fertig. Das HTTPS-Zertifikat holt Caddy sich selbst. Weiter bei Schritt 6.
+Continue at step 6.
 
-### 5C: Traefik
+#### 5C: Traefik
 
-Bei Traefik trägst du die Weiterleitung beim Sync-Server ein, nicht beim Proxy. Zuerst herausfinden, wie bei dir der HTTPS-Eingang und der Zertifikat-Dienst heißen:
+With Traefik the routing goes on the sync server's container as labels. First find the names of your HTTPS entrypoint and certificate resolver:
 
 ```bash
 docker inspect PROXY --format '{{range .Args}}{{println .}}{{end}}' | grep -E 'entrypoints|certificatesresolvers'
 ```
 
-Du suchst zwei Namen: bei `--entrypoints.NAME.address=:443` den Namen des Eingangs (oft `websecure`), und bei `--certificatesresolvers.NAME...` den Namen des Zertifikat-Dienstes (oft `letsencrypt` oder `le`). Kommt nichts raus, steht es in einer `traefik.yml` im PROXY-ORDNER.
+Look for `--entrypoints.NAME.address=:443` (often `websecure`) and `--certificatesresolvers.NAME...` (often `letsencrypt` or `le`). If nothing shows up, they are in a `traefik.yml` in `PROXY_DIR`.
 
-Dann die Compose-Datei des Sync-Servers öffnen:
-
-```bash
-cd /opt/burrow-sync
-nano docker-compose.yml
-```
-
-Direkt unter der Zeile `container_name: burrow-sync` einfügen, mit deinen zwei Namen statt `websecure` und `letsencrypt`:
+Open `/opt/burrow-sync/docker-compose.yml` and add this right below `container_name: burrow-sync`, with your two names in place of `websecure` and `letsencrypt`:
 
 ```yaml
     labels:
       - traefik.enable=true
       - traefik.docker.network=burrow-sync
-      - traefik.http.routers.burrow-sync.rule=Host(`sync.deinedomain.de`)
+      - traefik.http.routers.burrow-sync.rule=Host(`sync.example.com`)
       - traefik.http.routers.burrow-sync.entrypoints=websecure
       - traefik.http.routers.burrow-sync.tls.certresolver=letsencrypt
       - traefik.http.services.burrow-sync.loadbalancer.server.port=3000
 ```
 
-Speichern und neu starten:
+Then restart the sync server with `docker compose up -d` in `/opt/burrow-sync`. Continue at step 6.
 
-```bash
-docker compose up -d
-```
+#### 5D: nginx in Docker
 
-Weiter bei Schritt 6.
+In the mounts output from step 3, find the line whose right side is `/etc/nginx/conf.d`. The left side is the folder with the site configs. Look at an existing one to see where its certificates come from (`ssl_certificate` and `ssl_certificate_key`), and get a certificate for `sync.example.com` the same way (usually certbot).
 
-### 5D: nginx in Docker
-
-Such in der Mounts-Ausgabe aus Schritt 3 die Zeile, die rechts auf `/etc/nginx/conf.d` zeigt. Links steht der Ordner mit den Seiten-Konfigurationen. Schau dir die bestehende Datei deiner Website an:
-
-```bash
-ls /pfad/zu/conf.d
-cat /pfad/zu/conf.d/DEINE-WEBSITE.conf
-```
-
-Achte auf die Zeilen `ssl_certificate` und `ssl_certificate_key`. Daran siehst du, woher deine Zertifikate kommen.
-
-Für die neue Subdomain brauchst du ein eigenes Zertifikat. Wie du das bekommst, hängt davon ab, wie deine Website ihres bekommt (meist certbot). **Wenn du dir hier unsicher bist, schick mir den Inhalt der Website-Konfiguration** (ohne private Schlüssel, die stehen da sowieso nicht drin) und ich schreib dir die genauen Befehle.
-
-Hast du das Zertifikat, neue Datei anlegen:
-
-```bash
-nano /pfad/zu/conf.d/sync.conf
-```
-
-Inhalt, mit den Zertifikatspfaden nach demselben Muster wie bei deiner Website:
+Then create `sync.conf` in that folder, using the same certificate path pattern:
 
 ```nginx
 server {
     listen 80;
-    server_name sync.deinedomain.de;
+    server_name sync.example.com;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl;
     http2 on;
-    server_name sync.deinedomain.de;
+    server_name sync.example.com;
 
-    ssl_certificate     /etc/letsencrypt/live/sync.deinedomain.de/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/sync.deinedomain.de/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/sync.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sync.example.com/privkey.pem;
 
     client_max_body_size 6m;
 
@@ -371,24 +300,21 @@ server {
 }
 ```
 
-Testen und neu laden:
+Test and reload:
 
 ```bash
 docker exec PROXY nginx -t
+```
+
+```bash
 docker exec PROXY nginx -s reload
 ```
 
-`nginx -t` muss `syntax is ok` und `test is successful` sagen. Sonst mit `rm /pfad/zu/conf.d/sync.conf` die Datei wieder löschen und mir die Fehlermeldung schicken.
+nginx refuses to start when it can't resolve `burrow-sync`, so keep the sync server running. Otherwise, after a reboot, your other sites won't come back up either. Continue at step 6.
 
-Wichtig: nginx startet nur, wenn `burrow-sync` erreichbar ist. Lass den Sync-Server also immer laufen, sonst startet nach einem Neustart auch deine Website nicht.
+#### 5E: Proxy installed directly on the server
 
-Weiter bei Schritt 6.
-
-### 5E: Proxy läuft direkt auf dem Server (ohne Docker)
-
-Hier kann der Proxy kein Docker-Netz betreten. Deshalb lauscht der Sync-Server auf `127.0.0.1:3100`. Das ist nur vom Server selbst aus erreichbar, nicht aus dem Internet und nicht aus anderen Containern.
-
-Starten (statt Schritt 4):
+A proxy outside Docker can't join a Docker network, so here the sync server listens on `127.0.0.1:3100`. Only programs on the server itself can reach that address. Start it with the other Compose file:
 
 ```bash
 cd /opt/burrow-sync
@@ -398,26 +324,20 @@ cat .env
 docker compose -f docker-compose.host-proxy.yml up -d --build
 ```
 
-Code aus `cat .env` aufschreiben. Prüfen:
+Note the invite code, then check that it answers:
 
 ```bash
 curl http://127.0.0.1:3100/api/health
 ```
 
-Muss `{"ok":true}` liefern.
+It should print `{"ok":true}`. From now on, use `docker compose -f docker-compose.host-proxy.yml ...` wherever this guide says `docker compose ...`.
 
-**Wenn dein Proxy nginx ist:** Neue Datei anlegen:
-
-```bash
-nano /etc/nginx/sites-available/sync
-```
-
-Inhalt:
+**nginx:** create `/etc/nginx/sites-available/sync` with:
 
 ```nginx
 server {
     listen 80;
-    server_name sync.deinedomain.de;
+    server_name sync.example.com;
 
     client_max_body_size 6m;
 
@@ -429,80 +349,70 @@ server {
 }
 ```
 
-Aktivieren, testen, neu laden und das Zertifikat holen:
+Enable it, reload, and get a certificate. certbot adds the HTTPS part to the file for you. Say yes when it asks about redirecting HTTP to HTTPS.
 
 ```bash
 ln -s /etc/nginx/sites-available/sync /etc/nginx/sites-enabled/sync
 nginx -t && systemctl reload nginx
-certbot --nginx -d sync.deinedomain.de
+certbot --nginx -d sync.example.com
 ```
 
-certbot trägt HTTPS selbst in die Datei ein und fragt, ob HTTP auf HTTPS umgeleitet werden soll: ja. Falls `certbot` fehlt: `apt install certbot python3-certbot-nginx`.
-
-**Wenn dein Proxy Caddy ist:** In `/etc/caddy/Caddyfile` unten einfügen und `systemctl reload caddy`:
+**Caddy:** add this to `/etc/caddy/Caddyfile` and run `systemctl reload caddy`:
 
 ```
-sync.deinedomain.de {
+sync.example.com {
 	reverse_proxy 127.0.0.1:3100 {
 		header_up X-Real-IP {remote_host}
 	}
 }
 ```
 
-**Apache:** Sag mir Bescheid, dann schreib ich dir das passend.
+**Other proxies** (Apache, HAProxy, ...) work too. They need to serve HTTPS, forward to `http://127.0.0.1:3100`, allow request bodies of at least 6 MB, and overwrite `X-Real-IP` with the client's address.
 
-Bei 5E gilt ab jetzt überall: statt `docker compose ...` immer `docker compose -f docker-compose.host-proxy.yml ...`.
+### Step 6: Check
 
----
-
-## Schritt 6: Prüfen
-
-Auf deinem **Mac**:
+From your computer:
 
 ```bash
-curl https://sync.deinedomain.de/api/health
+curl https://sync.example.com/api/health
 ```
 
-Muss `{"ok":true}` liefern. Wenn nicht:
+It should print `{"ok":true}`. If not:
 
-- `Could not resolve host`: DNS aus Schritt 1 ist noch nicht da. Ein paar Minuten warten.
-- Zertifikatsfehler: Der Proxy hat noch kein Zertifikat. Bei 5A bis 5C kurz warten und die Proxy-Logs anschauen (`docker logs PROXY --tail 50`).
-- `502 Bad Gateway`: Der Proxy erreicht den Sync-Server nicht. Bei 5A bis 5D prüfen, ob beide im Netz `burrow-sync` hängen (siehe Ende von "Proxy ins Sync-Netz hängen").
+- `Could not resolve host`: the DNS record from step 1 isn't visible yet. Wait a few minutes.
+- A certificate error: the proxy has no certificate yet. Wait a moment and check its logs with `docker logs PROXY --tail 50`.
+- `502 Bad Gateway`: the proxy can't reach the sync server. For 5A to 5D, check that both are on the `burrow-sync` network.
 
-**Trennung von der Website prüfen** (nicht bei 5E). Auf dem VPS herausfinden, in welchem Netz die Website hängt (`WEBSITE` ist der Name deines Website-Containers aus `docker ps`):
+For 5A to 5D you can also check that other containers can't reach the sync server. Find the network of one of them (`OTHER` is its name from `docker ps`):
 
 ```bash
-docker inspect WEBSITE --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
+docker inspect OTHER --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
 ```
 
-Mit diesem Netznamen testen, ob man von dort an den Sync-Server kommt. **Das muss fehlschlagen** (`bad address` oder Timeout):
+Then try to reach the sync server from that network. This must **fail** with `bad address` or a timeout:
 
 ```bash
-docker run --rm --network NETZNAME alpine wget -qO- -T 3 http://burrow-sync:3000/api/health
+docker run --rm --network NETWORK_NAME alpine wget -qO- -T 3 http://burrow-sync:3000/api/health
 ```
 
-Wenn stattdessen `{"ok":true}` kommt, hängt die Website mit im Sync-Netz. Dann schick mir die Ausgabe.
+If it prints `{"ok":true}`, that container is on the `burrow-sync` network and should be removed from it.
 
----
+### Step 7: Create accounts
 
-## Schritt 7: In der App anmelden
+On the first device, open **Settings → Sync → Create account** and enter:
 
-Auf dem **ersten Gerät**: **Settings → Sync → Create account**.
+- Server: `https://sync.example.com`
+- User name: 3 to 32 characters from a-z, 0-9, dot, underscore and dash
+- Account password: a strong password you don't use anywhere else
+- Invite code: the code from step 4
 
-- Server: `https://sync.deinedomain.de`
-- User name: frei wählbar, z. B. `ben`
-- Account password: ein starkes Passwort, das du nirgends sonst benutzt
-- Invite code: der Code aus Schritt 4
+On every other device, use **Settings → Sync → Log in** with the same server, user name and password.
 
-Auf **allen anderen Geräten**: **Settings → Sync → Log in** mit demselben Server, Namen und Passwort.
+Nobody can recover a forgotten account password, not even the server's admin. The data already on your devices stays there, though.
 
-Ein vergessenes Konto-Passwort kann niemand wiederherstellen, auch du auf dem Server nicht. Die Daten auf deinen Geräten bleiben dann aber da.
+### Step 8: Turn registration off
 
----
-
-## Schritt 8: Registrierung schließen
-
-Wenn alle Konten angelegt sind, auf dem VPS:
+Once all accounts exist, empty the invite code and restart:
 
 ```bash
 cd /opt/burrow-sync
@@ -510,61 +420,52 @@ echo "REGISTRATION_CODE=" > .env
 docker compose up -d
 ```
 
-(Bei 5E: `docker compose -f docker-compose.host-proxy.yml up -d`.)
-
-Bestehende Konten funktionieren weiter, neue kann niemand mehr anlegen.
+Existing accounts keep working. Nobody can create new ones.
 
 ---
 
-## Später
+## Updating
 
-**Update**, wenn sich der Server-Code im Repo geändert hat. Auf dem Mac, im Repo-Ordner:
-
-```bash
-ssh DEINUSER@DEINE-VPS-IP mkdir -p burrow-sync
-scp server/* server/.dockerignore DEINUSER@DEINE-VPS-IP:~/burrow-sync/
-```
-
-Dann auf dem VPS (nach `ssh` und `sudo -i`):
+Copy the new files to your home folder on the server as in step 2. Then, on the server as root:
 
 ```bash
-cp /home/DEINUSER/burrow-sync/* /home/DEINUSER/burrow-sync/.dockerignore /opt/burrow-sync/
-rm -r /home/DEINUSER/burrow-sync
+cp /home/USER/burrow-sync/* /home/USER/burrow-sync/.dockerignore /opt/burrow-sync/
+rm -r /home/USER/burrow-sync
 cd /opt/burrow-sync
 docker compose up -d --build
 ```
 
-Das überschreibt nur die Server-Dateien. Deine `.env` auf dem VPS bleibt unangetastet.
+This only replaces the server's code. Your `.env` and the database stay as they are.
 
-**Backup.** Auf dem VPS (nach `ssh` und `sudo -i`):
+## Backups
+
+On the server as root:
 
 ```bash
 cd /opt/burrow-sync
 docker compose exec burrow-sync node backup.js
-docker cp burrow-sync:/data/backup-$(date +%F).db /home/DEINUSER/
-chown DEINUSER /home/DEINUSER/backup-*.db
+docker cp burrow-sync:/data/backup-$(date +%F).db /home/USER/
+chown USER /home/USER/backup-*.db
 ```
 
-Das legt die Sicherung in dein Home-Verzeichnis, wo dein Benutzer sie lesen darf. Dann auf dem Mac abholen:
+Then fetch it from your computer:
 
 ```bash
-scp DEINUSER@DEINE-VPS-IP:~/backup-*.db .
+scp USER@SERVER_IP:~/backup-*.db .
 ```
 
-Das Backup ist verschlüsselt und ohne die Konto-Passwörter wertlos.
+The data in the backup is encrypted and useless without the account passwords.
 
-**Logs anschauen:** `docker compose logs -f` (beenden mit `Ctrl+C`).
+To follow the logs, run `docker compose logs -f` in `/opt/burrow-sync`.
 
----
+## What is isolated and what isn't
 
-## Was getrennt ist und was nicht
+Separate from your other services:
 
-**Getrennt von der Website:**
+- **Network:** other containers can't reach the sync server.
+- **Data:** its own volume and SQLite database.
+- **Configuration:** its own folder and `.env`.
+- **Resources:** at most 128 MB of RAM and half a CPU, so it can't slow down anything else.
+- **Container:** runs as a non-root user with a read-only file system, no Linux capabilities, no privilege escalation and (except with 5E) no internet access.
 
-- **Netz:** Die Website kann den Container nicht erreichen.
-- **Daten:** eigenes Volume, eigene SQLite-Datenbank.
-- **Konfiguration:** eigener Ordner, eigene `.env`.
-- **Ressourcen:** höchstens 128 MB RAM und eine halbe CPU, damit der Container die Website nie ausbremst.
-- **Container selbst:** läuft ohne root, mit schreibgeschütztem Dateisystem, ohne Linux-Capabilities und (außer bei 5E) ohne Internetzugang.
-
-**Gemeinsam bleiben** der Reverse Proxy, der Docker-Dienst und der Linux-Kernel. Container sind keine virtuellen Maschinen. Wer auf dem VPS root wird, kommt an alles, sieht vom Sync aber nur verschlüsselte Daten. Wenn auch Proxy und Kernel getrennt sein sollen, geht das nur mit einem zweiten VPS.
+Shared with everything else: the reverse proxy, the Docker daemon and the Linux kernel. Containers are not virtual machines. Anyone who gets root on the server can reach everything, but from the sync server they only get encrypted data. If you want the proxy and kernel separated too, run the sync server on its own machine.

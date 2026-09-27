@@ -31,7 +31,7 @@ export function SettingsView() {
         <Field label="Theme">
           <div className="segmented">
             {(['dark', 'light'] as const).map((t) => (
-              <button key={t} type="button" className={draft.theme === t ? 'on' : ''} onClick={() => save({ ...draft, theme: t })}>
+              <button key={t} type="button" className={draft.theme === t ? 'on' : ''} title={t === 'dark' ? 'Use the dark theme' : 'Use the light theme'} onClick={() => save({ ...draft, theme: t })}>
                 {t === 'dark' ? 'Dark' : 'Light'}
               </button>
             ))}
@@ -76,7 +76,30 @@ export function SettingsView() {
                 key={String(on)}
                 type="button"
                 className={draft.showHostStatus === on ? 'on' : ''}
+                title={on ? 'Check host status in the background' : 'Do not check host status'}
                 onClick={() => save({ ...draft, showHostStatus: on })}
+              >
+                {on ? 'On' : 'Off'}
+              </button>
+            ))}
+          </div>
+        </Field>
+        <Field
+          label="Block screenshots"
+          hint={
+            api.platform === 'linux'
+              ? 'Not supported on Linux.'
+              : 'Hides the window from screenshots, screen recordings and screen sharing.'
+          }
+        >
+          <div className="segmented">
+            {([true, false] as const).map((on) => (
+              <button
+                key={String(on)}
+                type="button"
+                className={draft.blockScreenshots === on ? 'on' : ''}
+                title={on ? 'Hide the window from screenshots and screen sharing' : 'Allow screenshots and screen sharing'}
+                onClick={() => save({ ...draft, blockScreenshots: on })}
               >
                 {on ? 'On' : 'Off'}
               </button>
@@ -133,7 +156,7 @@ function ChangePasswordForm() {
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         <span className="spacer" />
-        <button type="submit" className="primary" disabled={busy || !current || weak || !repeat}>
+        <button type="submit" className="primary" title="Set the new vault password" disabled={busy || !current || weak || !repeat}>
           {busy ? 'Changing…' : 'Change password'}
         </button>
       </div>

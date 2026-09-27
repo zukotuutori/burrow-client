@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { CorruptFileError } from '../src/main/store/jsonFile'
 import { Vault, VaultLockedError } from '../src/main/vault/vault'
 import { WrongPasswordError, type KdfParams } from '../src/main/vault/crypto'
 
@@ -60,6 +61,18 @@ describe('Vault', () => {
     data.ciphertext = bytes.toString('base64')
     await writeFile(file, JSON.stringify(data))
     await expect(new Vault(file, FAST).unlock('master')).rejects.toBeInstanceOf(WrongPasswordError)
+  })
+
+  it('treats oversized scrypt settings as a broken file instead of running scrypt with them', async () => {
+    const v = new Vault(file, FAST)
+    await v.create('master')
+    const data = JSON.parse(await readFile(file, 'utf8'))
+    for (const huge of [{ N: 2 ** 30 }, { r: 2 ** 20 }, { p: 1000 }]) {
+      await writeFile(file, JSON.stringify({ ...data, ...huge }))
+      const fresh = new Vault(file, FAST)
+      expect(await fresh.status()).toBe('broken')
+      await expect(fresh.unlock('master')).rejects.toBeInstanceOf(CorruptFileError)
+    }
   })
 
   it('uses a new IV on every save', async () => {

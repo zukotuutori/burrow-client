@@ -18,7 +18,8 @@ export const DEFAULT_SETTINGS: Settings = {
   fontSize: 13,
   theme: 'dark',
   autoLockMinutes: 15,
-  showHostStatus: false
+  showHostStatus: false,
+  blockScreenshots: true
 }
 
 export function validateProfile(v: unknown): Profile {
@@ -100,13 +101,16 @@ export function validateSettings(v: unknown): Settings {
     throw new Error('Auto-lock must be 0 (off) to 1440 minutes')
   }
   if (typeof s.showHostStatus !== 'boolean') throw new Error('Invalid host status setting')
+  // Missing on settings synced from devices that predate this option; those keep the default.
+  if (s.blockScreenshots !== undefined && typeof s.blockScreenshots !== 'boolean') throw new Error('Invalid screenshot setting')
   return {
     ...syncFields(s),
     fontFamily: s.fontFamily.trim(),
     fontSize: s.fontSize!,
     theme: s.theme,
     autoLockMinutes: s.autoLockMinutes!,
-    showHostStatus: s.showHostStatus
+    showHostStatus: s.showHostStatus,
+    blockScreenshots: s.blockScreenshots ?? DEFAULT_SETTINGS.blockScreenshots
   }
 }
 

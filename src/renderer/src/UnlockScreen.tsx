@@ -45,7 +45,7 @@ export function UnlockScreen({ status, onDone }: { status: Exclude<VaultStatus, 
             empty vault. Saved passwords and keys will not be available.
           </p>
           {error && <p className="error">{error}</p>}
-          <button className="danger" disabled={busy} onClick={() => run(() => api.vault.reset())}>
+          <button className="danger" title="Back up the damaged vault file and start with an empty vault" disabled={busy} onClick={() => run(() => api.vault.reset())}>
             Back up and reset vault
           </button>
         </div>
@@ -82,7 +82,12 @@ export function UnlockScreen({ status, onDone }: { status: Exclude<VaultStatus, 
         )}
         {creating && <p className="muted small">There is no way to recover a forgotten master password.</p>}
         {error && <p className="error">{error}</p>}
-        <button className="primary" type="submit" disabled={busy || (creating && problems.length > 0)}>
+        <button
+          className="primary"
+          type="submit"
+          title={creating ? 'Create a new encrypted vault with this password' : 'Unlock the vault with your password'}
+          disabled={busy || (creating && problems.length > 0)}
+        >
           {busy ? 'Working…' : creating ? 'Create vault' : 'Unlock'}
         </button>
       </form>

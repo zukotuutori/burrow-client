@@ -77,7 +77,7 @@ export function HostsView({ onConnect, visible }: { onConnect: (profileId: strin
             <RefreshIcon />
           </button>
         )}
-        <button className="primary" onClick={() => setEditing(newProfile())}>
+        <button className="primary" title="Add a new host" onClick={() => setEditing(newProfile())}>
           <PlusIcon /> New host
         </button>
       </header>
@@ -118,10 +118,10 @@ export function HostsView({ onConnect, visible }: { onConnect: (profileId: strin
                     )}
                   </div>
                   <div className="host-actions">
-                    <button className="icon-btn" title="Edit" onClick={() => setEditing(p)}>
+                    <button className="icon-btn" title="Edit host" onClick={() => setEditing(p)}>
                       <EditIcon />
                     </button>
-                    <button className="icon-btn" title="Connect" onClick={() => onConnect(p.id)}>
+                    <button className="icon-btn" title="Connect in a new tab" onClick={() => onConnect(p.id)}>
                       <PlayIcon />
                     </button>
                   </div>

@@ -1,9 +1,14 @@
 {
   "name": "burrow-client",
   "productName": "Burrow Client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Local-first SSH client",
   "license": "MIT",
+  "author": "Zukotuutori",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zukotuutori/ssh-client.git"
+  },
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

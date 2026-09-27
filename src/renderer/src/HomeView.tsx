@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { api } from './api'
 import { useData } from './data'
-import { BookIcon, BurrowMark, CodeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
+import { BookIcon, BurrowMark, CodeIcon, CoffeeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
 import { useAction } from './toast'
 import { HostsView } from './views/HostsView'
 import { KeychainView } from './views/KeychainView'
@@ -76,6 +76,15 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
         {section === 'knownHosts' && <KnownHostsView />}
         {section === 'settings' && <SettingsView />}
       </main>
+      {section === 'hosts' && (
+        <button
+          className="kofi-btn"
+          title="Open Ko-fi in your browser"
+          onClick={() => void api.openExternal('https://ko-fi.com/zukotuutori')}
+        >
+          <CoffeeIcon /> Support me on Ko-fi
+        </button>
+      )}
     </div>
   )
 }

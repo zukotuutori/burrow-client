@@ -167,6 +167,7 @@ input[type='checkbox'] { width: auto; }
 .nav-item { background: transparent; border: none; justify-content: flex-start; padding: 8px 10px; color: var(--muted); border-radius: 7px; width: 100%; }
 .nav-item:hover { background: var(--surface-2); color: var(--text); filter: none; }
 .nav-item.active { background: var(--surface-3); color: var(--text); }
+.app-version { padding: 8px 10px 0; font-size: 11px; color: var(--muted); user-select: text; }
 .home-main { flex: 1; min-width: 0; overflow-y: auto; }
 .kofi-btn { position: fixed; bottom: 16px; right: 16px; z-index: 5; border: none; border-radius: 999px; padding: 9px 18px; background: #29abe0; color: #fff; font-weight: 600; box-shadow: var(--shadow); }
 .kofi-btn:hover:not(:disabled) { background: #1f9bcf; filter: none; }

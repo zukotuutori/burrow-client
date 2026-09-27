@@ -58,10 +58,11 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
         <button
           className="nav-item"
           title="Open the documentation in your browser"
-          onClick={() => void api.openExternal('https://zukotuutori.dev/burrow-client-documentation')}
+          onClick={() => void api.openExternal('https://zukotuutori.dev/burrowclient/documentation')}
         >
           <BookIcon /> Documentation
         </button>
+        <span className="app-version">v{__APP_VERSION__}</span>
       </nav>
       <main className="home-main">
         {loadErrors.map((e) => (

@@ -20,6 +20,7 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
 ]
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 interface Props {
   onConnect: (profileId: string) => void
   onOpenLocal: () => void
@@ -28,6 +29,8 @@ interface Props {
 
 export function HomeView({ onConnect, onOpenLocal, onLock }: Props) {
 =======
+=======
+>>>>>>> Stashed changes
 export function HomeView({
   onConnect,
   onLock,
@@ -37,6 +40,9 @@ export function HomeView({
   onLock: () => void
   visible: boolean
 }) {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   const [section, setSection] = useState<Section>('hosts')
   const { loadErrors, reload } = useData()

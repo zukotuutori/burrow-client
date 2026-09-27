@@ -19,6 +19,7 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
   { id: 'settings', label: 'Settings', icon: <SettingsIcon /> }
 ]
 
+<<<<<<< Updated upstream
 interface Props {
   onConnect: (profileId: string) => void
   onOpenLocal: () => void
@@ -26,6 +27,17 @@ interface Props {
 }
 
 export function HomeView({ onConnect, onOpenLocal, onLock }: Props) {
+=======
+export function HomeView({
+  onConnect,
+  onLock,
+  visible
+}: {
+  onConnect: (profileId: string) => void
+  onLock: () => void
+  visible: boolean
+}) {
+>>>>>>> Stashed changes
   const [section, setSection] = useState<Section>('hosts')
   const { loadErrors, reload } = useData()
   const run = useAction()
@@ -62,7 +74,7 @@ export function HomeView({ onConnect, onOpenLocal, onLock }: Props) {
             <button onClick={() => reset(e.file)}>Reset</button>
           </div>
         ))}
-        {section === 'hosts' && <HostsView onConnect={onConnect} />}
+        {section === 'hosts' && <HostsView onConnect={onConnect} visible={visible} />}
         {section === 'keychain' && <KeychainView />}
         {section === 'snippets' && <SnippetsView />}
         {section === 'knownHosts' && <KnownHostsView />}

@@ -1,42 +1,59 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Profile } from '../../../shared/types'
 import { api } from '../api'
 import { Empty } from '../components/Empty'
 import { SidePanel } from '../components/SidePanel'
 import { useData } from '../data'
-import { EditIcon, PlayIcon, PlusIcon, ServerIcon } from '../icons'
+import { EditIcon, PlayIcon, PlusIcon, RefreshIcon, ServerIcon } from '../icons'
 import { HostForm, newProfile } from './HostForm'
 
-const STATUS_INTERVAL_MS = 30_000
-
-/** Checks every host on an interval while enabled. A missing entry means the first check has not finished yet. */
-function useHostStatus(profiles: Profile[], enabled: boolean): Record<string, boolean> {
+/**
+ * Checks every host when the view opens, when it becomes visible again and when refresh is called,
+ * plus any host that was added or got a new address. A missing entry means the check has not finished yet.
+ */
+function useHostStatus(profiles: Profile[], enabled: boolean, visible: boolean) {
   const [status, setStatus] = useState<Record<string, boolean>>({})
-  useEffect(() => {
-    if (!enabled) return setStatus({})
-    let cancelled = false
-    const check = () =>
-      profiles.forEach((p) =>
-        api.profiles.reachable(p.id).then(
-          (ok) => !cancelled && setStatus((s) => ({ ...s, [p.id]: ok })),
-          () => {}
-        )
+  const [round, setRound] = useState(0)
+  const profilesRef = useRef(profiles)
+  profilesRef.current = profiles
+  // Address each host was last checked with, and a counter so results of an older round are dropped.
+  const checked = useRef(new Map<string, string>())
+  const generation = useRef(0)
+
+  const check = useCallback((list: Profile[]) => {
+    const gen = generation.current
+    for (const p of list) {
+      checked.current.set(p.id, `${p.host}:${p.port}`)
+      api.profiles.reachable(p.id).then(
+        (ok) => gen === generation.current && setStatus((s) => ({ ...s, [p.id]: ok })),
+        () => {}
       )
-    check()
-    const timer = setInterval(check, STATUS_INTERVAL_MS)
-    return () => {
-      cancelled = true
-      clearInterval(timer)
     }
-  }, [profiles, enabled])
-  return status
+  }, [])
+
+  useEffect(() => {
+    generation.current++
+    checked.current.clear()
+    if (!enabled) return setStatus({})
+    if (visible) check(profilesRef.current)
+  }, [enabled, visible, round, check])
+
+  useEffect(() => {
+    if (enabled) check(profiles.filter((p) => checked.current.get(p.id) !== `${p.host}:${p.port}`))
+  }, [profiles, enabled, check])
+
+  const refresh = useCallback(() => {
+    setStatus({})
+    setRound((r) => r + 1)
+  }, [])
+  return { status, refresh }
 }
 
-export function HostsView({ onConnect }: { onConnect: (profileId: string) => void }) {
+export function HostsView({ onConnect, visible }: { onConnect: (profileId: string) => void; visible: boolean }) {
   const { profiles, settings, reload } = useData()
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<Profile | null>(null)
-  const status = useHostStatus(profiles, settings.showHostStatus)
+  const { status, refresh } = useHostStatus(profiles, settings.showHostStatus, visible)
 
   const q = query.toLowerCase()
   const filtered = profiles
@@ -55,6 +72,11 @@ export function HostsView({ onConnect }: { onConnect: (profileId: string) => voi
         <h1>Hosts</h1>
         <input className="search" placeholder="Search hosts" value={query} onChange={(e) => setQuery(e.target.value)} />
         <span className="spacer" />
+        {settings.showHostStatus && (
+          <button className="icon-btn" title="Check host status" onClick={refresh}>
+            <RefreshIcon />
+          </button>
+        )}
         <button className="primary" onClick={() => setEditing(newProfile())}>
           <PlusIcon /> New host
         </button>

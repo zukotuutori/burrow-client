@@ -105,9 +105,9 @@ describe('SshSession', () => {
     const s = await SshSession.open(
       base(server.port, {
         password: 'pw',
-        readyTimeout: 300,
+        readyTimeout: 1000,
         verifyHostKey: async () => {
-          await new Promise((r) => setTimeout(r, 600))
+          await new Promise((r) => setTimeout(r, 1500))
           return true
         }
       }),

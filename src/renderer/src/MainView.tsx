@@ -10,9 +10,9 @@ export function Main({ onLock }: { onLock: () => void }) {
   const [active, setActive] = useState('home')
   const [statuses, setStatuses] = useState<Record<string, TabStatus>>({})
 
-  const open = (profileId: string) => {
+  const open = (profileId: string | null) => {
     const id = crypto.randomUUID()
-    const title = profiles.find((p) => p.id === profileId)?.name ?? 'Session'
+    const title = profileId ? (profiles.find((p) => p.id === profileId)?.name ?? 'Session') : 'Local'
     setTabs((t) => [...t, { id, profileId, title }])
     setActive(id)
   }
@@ -30,7 +30,7 @@ export function Main({ onLock }: { onLock: () => void }) {
       )}
       <div className="app-body">
         <div className="tab-content" hidden={active !== 'home'}>
-          <HomeView onConnect={open} onLock={onLock} />
+          <HomeView onConnect={open} onOpenLocal={() => open(null)} onLock={onLock} />
         </div>
         {tabs.map((t) => (
           <div key={t.id} className="tab-content" hidden={active !== t.id}>

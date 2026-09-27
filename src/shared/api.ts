@@ -79,6 +79,8 @@ export interface BurrowApi {
   }
   session: {
     connect(id: string, profileId: string, cols: number, rows: number): Promise<void>
+    /** Starts the user's shell on this machine. */
+    openLocal(id: string, cols: number, rows: number): Promise<void>
     write(id: string, data: string): void
     resize(id: string, cols: number, rows: number): void
     close(id: string): Promise<void>

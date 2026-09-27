@@ -12,7 +12,8 @@ import { TerminalHost, useHostStatus } from './terminalHost'
 export type TabStatus = 'connecting' | 'connected' | 'closed'
 
 interface Props {
-  profileId: string
+  /** Null for a local terminal. */
+  profileId: string | null
   active: boolean
   onStatus: (status: TabStatus) => void
   onEmpty: () => void
@@ -122,7 +123,7 @@ export function SessionTab({ profileId, active, onStatus, onEmpty }: Props) {
   return (
     <div className="session">
       <div className="session-toolbar">
-        <span className="session-title">{profile?.name ?? 'Deleted host'}</span>
+        <span className="session-title">{profileId ? (profile?.name ?? 'Deleted host') : 'Local terminal'}</span>
         {profile && (
           <span className="muted">
             {profile.user}@{profile.host}
@@ -138,9 +139,11 @@ export function SessionTab({ profileId, active, onStatus, onEmpty }: Props) {
         <button className={`toggle ${showSnippets ? 'on' : ''}`} onClick={() => setShowSnippets((s) => !s)}>
           <CodeIcon /> Snippets
         </button>
-        <button className={`toggle ${showSftp ? 'on' : ''}`} onClick={() => setShowSftp((s) => !s)}>
-          <FolderIcon /> SFTP
-        </button>
+        {profileId && (
+          <button className={`toggle ${showSftp ? 'on' : ''}`} onClick={() => setShowSftp((s) => !s)}>
+            <FolderIcon /> SFTP
+          </button>
+        )}
       </div>
       <div className="session-body">
         <div className="session-terminals">
@@ -150,7 +153,7 @@ export function SessionTab({ profileId, active, onStatus, onEmpty }: Props) {
             renderPane={(id) => <PaneSlot key={id} host={getHost(id)} focused={id === focused} onClose={() => closePane(id)} />}
           />
         </div>
-        {showSftp && <SftpBrowser sessionId={sftpSession} />}
+        {showSftp && profileId && <SftpBrowser sessionId={sftpSession} />}
         {showSnippets && <SnippetsDrawer profileId={profileId} onSend={sendSnippet} />}
       </div>
     </div>

@@ -25,7 +25,7 @@ export function PaneSlot({ host, focused, onClose }: { host: TerminalHost; focus
           <div className="actions">
             <button onClick={onClose}>Close</button>
             <button className="primary" onClick={() => void host.connect()}>
-              Reconnect
+              {host.profileId ? 'Reconnect' : 'Restart'}
             </button>
           </div>
         </div>

@@ -4,7 +4,8 @@ import type { TabStatus } from './session/SessionTab'
 
 export interface SessionTabInfo {
   id: string
-  profileId: string
+  /** Null for a local terminal. */
+  profileId: string | null
   title: string
 }
 

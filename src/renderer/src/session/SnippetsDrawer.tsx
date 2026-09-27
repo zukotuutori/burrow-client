@@ -5,12 +5,13 @@ import { useData } from '../data'
 import { PlusIcon } from '../icons'
 import { SnippetForm } from '../views/SnippetsView'
 
-export function SnippetsDrawer({ profileId, onSend }: { profileId: string; onSend: (command: string) => void }) {
+/** `profileId` is null in a local terminal, where only snippets for all hosts are listed. */
+export function SnippetsDrawer({ profileId, onSend }: { profileId: string | null; onSend: (command: string) => void }) {
   const { snippets, reload } = useData()
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState<Snippet | null>(null)
   const q = query.toLowerCase()
-  const forHost = (s: Snippet) => !!s.profileIds?.includes(profileId)
+  const forHost = (s: Snippet) => !!profileId && !!s.profileIds?.includes(profileId)
   const list = snippets
     .filter((s) => !s.profileIds || forHost(s))
     .filter((s) => `${s.name} ${s.command}`.toLowerCase().includes(q))
@@ -20,13 +21,15 @@ export function SnippetsDrawer({ profileId, onSend }: { profileId: string; onSen
     <aside className="drawer">
       <header className="drawer-header">
         <span className="spacer">Snippets</span>
-        <button
-          className="icon-btn"
-          title="New snippet for this host"
-          onClick={() => setCreating({ id: crypto.randomUUID(), name: '', command: '', profileIds: [profileId] })}
-        >
-          <PlusIcon />
-        </button>
+        {profileId && (
+          <button
+            className="icon-btn"
+            title="New snippet for this host"
+            onClick={() => setCreating({ id: crypto.randomUUID(), name: '', command: '', profileIds: [profileId] })}
+          >
+            <PlusIcon />
+          </button>
+        )}
       </header>
       <input className="search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
       <div className="drawer-list">
@@ -39,7 +42,11 @@ export function SnippetsDrawer({ profileId, onSend }: { profileId: string; onSen
             <div className="list-sub mono">{s.command}</div>
           </button>
         ))}
-        {list.length === 0 && <p className="muted pad">No snippets for this host yet. Use + to add one.</p>}
+        {list.length === 0 && (
+          <p className="muted pad">
+            {profileId ? 'No snippets for this host yet. Use + to add one.' : 'No snippets for all hosts yet.'}
+          </p>
+        )}
       </div>
       {creating && (
         <SidePanel title="New snippet for this host" onClose={() => setCreating(null)}>

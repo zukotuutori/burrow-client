@@ -147,6 +147,7 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
   handle('session:connect', (id, profileId, cols, rows) =>
     core.connect(str(id, 'id'), str(profileId, 'profileId'), int(cols, 'cols'), int(rows, 'rows'), ask)
   )
+  handle('session:openLocal', (id, cols, rows) => core.openLocal(str(id, 'id'), int(cols, 'cols'), int(rows, 'rows')))
   on('session:write', (id, data) => {
     if (typeof id === 'string' && typeof data === 'string') core.write(id, data)
   })

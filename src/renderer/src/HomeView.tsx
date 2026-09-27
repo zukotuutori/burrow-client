@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { api } from './api'
 import { useData } from './data'
-import { BurrowMark, CodeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon } from './icons'
+import { BurrowMark, CodeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
 import { useAction } from './toast'
 import { HostsView } from './views/HostsView'
 import { KeychainView } from './views/KeychainView'
@@ -19,7 +19,13 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
   { id: 'settings', label: 'Settings', icon: <SettingsIcon /> }
 ]
 
-export function HomeView({ onConnect, onLock }: { onConnect: (profileId: string) => void; onLock: () => void }) {
+interface Props {
+  onConnect: (profileId: string) => void
+  onOpenLocal: () => void
+  onLock: () => void
+}
+
+export function HomeView({ onConnect, onOpenLocal, onLock }: Props) {
   const [section, setSection] = useState<Section>('hosts')
   const { loadErrors, reload } = useData()
   const run = useAction()
@@ -42,6 +48,9 @@ export function HomeView({ onConnect, onLock }: { onConnect: (profileId: string)
           </button>
         ))}
         <span className="spacer" />
+        <button className="nav-item" onClick={onOpenLocal}>
+          <TerminalIcon /> Open terminal
+        </button>
         <button className="nav-item" onClick={onLock}>
           <LockIcon /> Lock vault
         </button>

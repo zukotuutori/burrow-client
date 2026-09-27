@@ -15,7 +15,7 @@ const THEMES: Record<Settings['theme'], ITheme> = {
 }
 
 /**
- * One terminal pane and its SSH session. Lives outside React so it survives split-layout changes:
+ * One terminal pane and its SSH session or local shell. Lives outside React so it survives split-layout changes:
  * React only moves `el` between slot elements.
  */
 export class TerminalHost {
@@ -32,7 +32,8 @@ export class TerminalHost {
   private disposed = false
 
   constructor(
-    private readonly profileId: string,
+    /** Null for a local shell. */
+    readonly profileId: string | null,
     settings: Settings
   ) {
     this.el.className = 'terminal-host'
@@ -82,7 +83,8 @@ export class TerminalHost {
       })
     ]
     try {
-      await api.session.connect(id, this.profileId, this.term.cols, this.term.rows)
+      if (this.profileId) await api.session.connect(id, this.profileId, this.term.cols, this.term.rows)
+      else await api.session.openLocal(id, this.term.cols, this.term.rows)
       if (this.disposed) return void api.session.close(id)
       if (this.sessionId !== id || this.status.state !== 'connecting') return
       this.setStatus({ state: 'connected' })

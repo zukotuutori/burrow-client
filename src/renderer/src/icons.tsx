@@ -36,6 +36,12 @@ export const CodeIcon = () => (
     <path d="M9 7l-5 5 5 5M15 7l5 5-5 5" />
   </Svg>
 )
+export const TerminalIcon = () => (
+  <Svg>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M7 9l3 3-3 3M13 15h4" />
+  </Svg>
+)
 export const ShieldIcon = () => (
   <Svg>
     <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />

@@ -15,6 +15,7 @@ import type {
 } from '../shared/types'
 import { masterPasswordProblems, PASSWORD_RULE_TEXT } from '../shared/passwordPolicy'
 import { generateKey, importKey, isEncrypted, type KeyMaterial } from './keys/keys'
+import { LocalShell } from './localShell'
 import { checkHostKey, hostId } from './ssh/hostkeys'
 import { isReachable } from './ssh/reachable'
 import { SshSession } from './ssh/session'
@@ -57,7 +58,7 @@ export class Core {
   readonly knownHosts: JsonDoc<KnownHosts>
   readonly settings: JsonDoc<Settings>
   readonly sync: SyncService
-  private readonly sessions = new Map<string, SshSession>()
+  private readonly sessions = new Map<string, SshSession | LocalShell>()
   private readonly sftps = new Map<string, SftpClient>()
   private loadErrors: LoadError[] = []
   /** Bumped on every lock, so a connect that started before the lock can tell. */
@@ -475,6 +476,18 @@ export class Core {
     }
   }
 
+  openLocal(sessionId: string, cols: number, rows: number): void {
+    if (this.sessions.has(sessionId)) throw new Error('Session id already in use')
+    const shell = new LocalShell(cols, rows, {
+      onData: (data) => this.emit('session:data', sessionId, data),
+      onClose: (reason) => {
+        this.sessions.delete(sessionId)
+        this.emit('session:closed', sessionId, reason ?? 'Shell closed')
+      }
+    })
+    this.sessions.set(sessionId, shell)
+  }
+
   write(id: string, data: string): void {
     this.sessions.get(id)?.write(data)
   }
@@ -495,7 +508,7 @@ export class Core {
     const existing = this.sftps.get(id)
     if (existing) return existing
     const session = this.sessions.get(id)
-    if (!session) throw new Error('Session is not connected')
+    if (!(session instanceof SshSession)) throw new Error('Session is not connected')
     const client = new SftpClient(await session.sftp())
     this.sftps.set(id, client)
     return client

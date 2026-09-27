@@ -84,6 +84,7 @@ const api: BurrowApi = {
   },
   session: {
     connect: (id, profileId, cols, rows) => invoke('session:connect', id, profileId, cols, rows),
+    openLocal: (id, cols, rows) => invoke('session:openLocal', id, cols, rows),
     write: (id, data) => ipcRenderer.send('session:write', id, data),
     resize: (id, cols, rows) => ipcRenderer.send('session:resize', id, cols, rows),
     close: (id) => invoke('session:close', id),

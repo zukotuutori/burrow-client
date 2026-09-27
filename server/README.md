@@ -6,8 +6,11 @@ Er läuft komplett getrennt von deiner Website: eigener Ordner, eigenes Docker-P
 
 In den Befehlen ersetzt du:
 
+- `DEINUSER` durch den Benutzer, mit dem du dich sonst per SSH auf dem VPS anmeldest
 - `DEINE-VPS-IP` durch die IP deines VPS (steht im IONOS Cloud Panel)
-- `sync.deinedomain.de` durch die Subdomain, die du für den Sync nehmen willst
+- `sync.deinedomain.de` durch die Domain, die du für den Sync nehmen willst
+
+Falls du in `~/.ssh/config` einen Kurznamen für den Server hast (z. B. `ssh vps`), kannst du den überall statt `DEINUSER@DEINE-VPS-IP` nehmen.
 
 Die Befehle kopierst du einfach ins Terminal und drückst Enter.
 
@@ -36,25 +39,34 @@ Beim ersten muss deine VPS-IP rauskommen. Beim zweiten entweder nichts oder die 
 
 ## Schritt 2: Dateien auf den VPS kopieren
 
+Dein Benutzer darf nicht direkt nach `/opt` schreiben, und `scp` kann auf dem Server kein `sudo` benutzen. Deshalb kopierst du die Dateien erst in dein Home-Verzeichnis auf dem VPS und schiebst sie dann mit root-Rechten an ihren Platz.
+
 Auf deinem **Mac**, im Terminal, im Ordner des Repos (`ssh-client`):
 
 ```bash
-rsync -av --exclude .env --exclude '*.db' server/ root@DEINE-VPS-IP:/opt/burrow-sync/
+ssh DEINUSER@DEINE-VPS-IP mkdir -p burrow-sync
+scp server/* server/.dockerignore DEINUSER@DEINE-VPS-IP:~/burrow-sync/
 ```
 
-Das kopiert den Ordner `server` nach `/opt/burrow-sync` auf dem VPS. Falls `rsync` auf dem VPS fehlt, meldet er das. Dann einmal auf dem VPS `apt install rsync` ausführen und nochmal versuchen.
+Der erste Befehl legt auf dem VPS den Ordner `~/burrow-sync` an, der zweite kopiert die Dateien aus `server` hinein. Versteckte Dateien wie eine lokale `.env` nimmt `server/*` nicht mit, nur die `.dockerignore` wird extra angegeben.
 
-Ab jetzt arbeitest du **auf dem VPS**. Verbinden:
+Jetzt **auf den VPS** verbinden und root werden:
 
 ```bash
-ssh root@DEINE-VPS-IP
+ssh DEINUSER@DEINE-VPS-IP
 ```
 
-Falls du dich nicht als `root` anmeldest, sondern mit einem eigenen Benutzer, schreib vor jeden Befehl ab hier `sudo`.
+```bash
+sudo -i
+```
 
-Den Ordner so einstellen, dass nur root hineinschauen kann:
+`sudo -i` fragt nach deinem Passwort und öffnet eine Sitzung als root. Das siehst du am `#` statt `$` am Ende der Eingabezeile. **Alle weiteren Befehle auf dem VPS führst du in dieser root-Sitzung aus.** Wenn du dich später neu verbindest, erst wieder `ssh` und dann `sudo -i`.
+
+Die Dateien an ihren Platz schieben, root als Besitzer eintragen und den Ordner so einstellen, dass nur root hineinschauen kann (`DEINUSER` hier wieder durch deinen Benutzer ersetzen):
 
 ```bash
+mv /home/DEINUSER/burrow-sync /opt/burrow-sync
+chown -R root:root /opt/burrow-sync
 chmod 700 /opt/burrow-sync
 ```
 
@@ -506,25 +518,37 @@ Bestehende Konten funktionieren weiter, neue kann niemand mehr anlegen.
 
 ## Später
 
-**Update**, wenn sich der Server-Code im Repo geändert hat: auf dem Mac den `rsync`-Befehl aus Schritt 2 nochmal ausführen (deine `.env` auf dem VPS bleibt unangetastet), dann auf dem VPS:
+**Update**, wenn sich der Server-Code im Repo geändert hat. Auf dem Mac, im Repo-Ordner:
 
 ```bash
+ssh DEINUSER@DEINE-VPS-IP mkdir -p burrow-sync
+scp server/* server/.dockerignore DEINUSER@DEINE-VPS-IP:~/burrow-sync/
+```
+
+Dann auf dem VPS (nach `ssh` und `sudo -i`):
+
+```bash
+cp /home/DEINUSER/burrow-sync/* /home/DEINUSER/burrow-sync/.dockerignore /opt/burrow-sync/
+rm -r /home/DEINUSER/burrow-sync
 cd /opt/burrow-sync
 docker compose up -d --build
 ```
 
-**Backup:**
+Das überschreibt nur die Server-Dateien. Deine `.env` auf dem VPS bleibt unangetastet.
+
+**Backup.** Auf dem VPS (nach `ssh` und `sudo -i`):
 
 ```bash
 cd /opt/burrow-sync
 docker compose exec burrow-sync node backup.js
-docker cp burrow-sync:/data/backup-$(date +%F).db .
+docker cp burrow-sync:/data/backup-$(date +%F).db /home/DEINUSER/
+chown DEINUSER /home/DEINUSER/backup-*.db
 ```
 
-Die Datei liegt dann in `/opt/burrow-sync`. Auf deinen Mac holen (auf dem Mac ausführen):
+Das legt die Sicherung in dein Home-Verzeichnis, wo dein Benutzer sie lesen darf. Dann auf dem Mac abholen:
 
 ```bash
-scp root@DEINE-VPS-IP:/opt/burrow-sync/backup-*.db .
+scp DEINUSER@DEINE-VPS-IP:~/backup-*.db .
 ```
 
 Das Backup ist verschlüsselt und ohne die Konto-Passwörter wertlos.

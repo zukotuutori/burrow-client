@@ -30,15 +30,7 @@ export function Main({ onLock }: { onLock: () => void }) {
       )}
       <div className="app-body">
         <div className="tab-content" hidden={active !== 'home'}>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-          <HomeView onConnect={open} onOpenLocal={() => open(null)} onLock={onLock} />
-=======
-          <HomeView onConnect={open} onLock={onLock} visible={active === 'home'} />
->>>>>>> Stashed changes
-=======
-          <HomeView onConnect={open} onLock={onLock} visible={active === 'home'} />
->>>>>>> Stashed changes
+          <HomeView onConnect={open} onOpenLocal={() => open(null)} onLock={onLock} visible={active === 'home'} />
         </div>
         {tabs.map((t) => (
           <div key={t.id} className="tab-content" hidden={active !== t.id}>

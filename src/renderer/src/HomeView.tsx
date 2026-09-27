@@ -19,31 +19,14 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
   { id: 'settings', label: 'Settings', icon: <SettingsIcon /> }
 ]
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 interface Props {
   onConnect: (profileId: string) => void
   onOpenLocal: () => void
   onLock: () => void
+  visible: boolean
 }
 
-export function HomeView({ onConnect, onOpenLocal, onLock }: Props) {
-=======
-=======
->>>>>>> Stashed changes
-export function HomeView({
-  onConnect,
-  onLock,
-  visible
-}: {
-  onConnect: (profileId: string) => void
-  onLock: () => void
-  visible: boolean
-}) {
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
   const [section, setSection] = useState<Section>('hosts')
   const { loadErrors, reload } = useData()
   const run = useAction()

@@ -59,6 +59,18 @@ export interface Settings extends Syncable {
   showHostStatus: boolean
   /** Keep the window out of screenshots and screen recordings (macOS and Windows only). */
   blockScreenshots: boolean
+  /** Ask GitHub for a newer version once per app start. */
+  checkUpdatesOnStartup: boolean
+}
+
+export interface UpdateInfo {
+  current: string
+  latest: string
+  available: boolean
+  /** The file for this system, or the release page when there is none. */
+  downloadUrl: string
+  /** Only an AppImage can download and install the update itself. */
+  canInstall: boolean
 }
 
 export interface KeyMeta extends Syncable {

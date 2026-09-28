@@ -7,6 +7,7 @@ import { PasswordRules } from '../components/PasswordRules'
 import { useData } from '../data'
 import { useAction, useToast } from '../toast'
 import { SyncSection } from './SyncSection'
+import { UpdateCheck } from './UpdatesSection'
 import { errMsg } from '../util'
 
 const AUTO_LOCK_CHOICES = [0, 5, 10, 15, 30, 60]
@@ -106,6 +107,28 @@ export function SettingsView() {
             ))}
           </div>
         </Field>
+      </div>
+      <div className="form">
+        <h2 className="section-title">Updates</h2>
+        <Field
+          label="Check on startup"
+          hint="Asks GitHub for the latest version once each time Burrow starts. GitHub sees your IP address. Nothing else is sent."
+        >
+          <div className="segmented">
+            {([true, false] as const).map((on) => (
+              <button
+                key={String(on)}
+                type="button"
+                className={draft.checkUpdatesOnStartup === on ? 'on' : ''}
+                title={on ? 'Check for updates when Burrow starts' : 'Only check when you click the button'}
+                onClick={() => save({ ...draft, checkUpdatesOnStartup: on })}
+              >
+                {on ? 'On' : 'Off'}
+              </button>
+            ))}
+          </div>
+        </Field>
+        <UpdateCheck />
       </div>
       <SyncSection />
       <ChangePasswordForm />

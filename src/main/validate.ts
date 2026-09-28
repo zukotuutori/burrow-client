@@ -19,7 +19,8 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   autoLockMinutes: 15,
   showHostStatus: false,
-  blockScreenshots: true
+  blockScreenshots: true,
+  checkUpdatesOnStartup: false
 }
 
 export function validateProfile(v: unknown): Profile {
@@ -103,6 +104,9 @@ export function validateSettings(v: unknown): Settings {
   if (typeof s.showHostStatus !== 'boolean') throw new Error('Invalid host status setting')
   // Missing on settings synced from devices that predate this option; those keep the default.
   if (s.blockScreenshots !== undefined && typeof s.blockScreenshots !== 'boolean') throw new Error('Invalid screenshot setting')
+  if (s.checkUpdatesOnStartup !== undefined && typeof s.checkUpdatesOnStartup !== 'boolean') {
+    throw new Error('Invalid update check setting')
+  }
   return {
     ...syncFields(s),
     fontFamily: s.fontFamily.trim(),
@@ -110,7 +114,8 @@ export function validateSettings(v: unknown): Settings {
     theme: s.theme,
     autoLockMinutes: s.autoLockMinutes!,
     showHostStatus: s.showHostStatus,
-    blockScreenshots: s.blockScreenshots ?? DEFAULT_SETTINGS.blockScreenshots
+    blockScreenshots: s.blockScreenshots ?? DEFAULT_SETTINGS.blockScreenshots,
+    checkUpdatesOnStartup: s.checkUpdatesOnStartup ?? DEFAULT_SETTINGS.checkUpdatesOnStartup
   }
 }
 

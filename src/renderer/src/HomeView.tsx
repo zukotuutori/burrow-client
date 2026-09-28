@@ -8,6 +8,7 @@ import { KeychainView } from './views/KeychainView'
 import { KnownHostsView } from './views/KnownHostsView'
 import { SettingsView } from './views/SettingsView'
 import { SnippetsView } from './views/SnippetsView'
+import { useStartupUpdateCheck } from './views/UpdatesSection'
 
 type Section = 'hosts' | 'keychain' | 'snippets' | 'knownHosts' | 'settings'
 
@@ -28,7 +29,8 @@ interface Props {
 
 export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
   const [section, setSection] = useState<Section>('hosts')
-  const { loadErrors, reload } = useData()
+  const { loadErrors, reload, settings } = useData()
+  const update = useStartupUpdateCheck(settings.checkUpdatesOnStartup)
   const run = useAction()
 
   const reset = async (file: string) => {
@@ -63,6 +65,11 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
           <BookIcon /> Documentation
         </button>
         <span className="app-version">v{__APP_VERSION__}</span>
+        {update && (
+          <button className="link app-update" title="Open the update settings" onClick={() => setSection('settings')}>
+            Update to {update.latest}
+          </button>
+        )}
       </nav>
       <main className="home-main">
         {loadErrors.map((e) => (

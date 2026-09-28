@@ -268,6 +268,15 @@ describe('Core settings', () => {
     await expect(core.saveSettings({ ...base, blockScreenshots: 'no' })).rejects.toThrow(/screenshot/)
   })
 
+  it('keeps the startup update check off by default and validates the setting', async () => {
+    const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', autoLockMinutes: 15, showHostStatus: false }
+    await core.saveSettings(base)
+    expect(core.getSettings().checkUpdatesOnStartup).toBe(false)
+    await core.saveSettings({ ...base, checkUpdatesOnStartup: true })
+    expect(core.getSettings().checkUpdatesOnStartup).toBe(true)
+    await expect(core.saveSettings({ ...base, checkUpdatesOnStartup: 'yes' })).rejects.toThrow(/update/)
+  })
+
   it('validates the auto-lock minutes', async () => {
     const base = { fontFamily: 'Menlo', fontSize: 13, theme: 'dark', showHostStatus: false }
     await core.saveSettings({ ...base, autoLockMinutes: 0 })

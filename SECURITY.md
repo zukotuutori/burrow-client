@@ -28,7 +28,7 @@ Out of scope: problems that need malware already running as your user, a machine
 | 1.x (latest release) | Yes |
 | Anything older | No |
 
-The app doesn't update itself, so check the [Releases page](https://github.com/zukotuutori/ssh-client/releases) now and then.
+To see whether you're on the latest version, use **Settings → Updates**, or look at the [Releases page](https://github.com/zukotuutori/ssh-client/releases).
 
 ## How your data is protected
 
@@ -76,6 +76,15 @@ The app only talks to sync servers over HTTPS (plain HTTP only to `localhost`, f
 
 The server keeps registration closed unless an invite code is set, blocks an IP for 15 minutes after 10 failed attempts, and caps request size. The Docker setup runs it as a non-root user on a read-only file system with no Linux capabilities and no published port.
 
+### Updates
+
+Burrow only contacts GitHub when you click **Check for updates**, or once per start if you turned on the startup check (it's off by default). The request goes to `api.github.com` and carries nothing about you except your IP address. Download links from the answer are only used if they point to this repository's releases.
+
+- **AppImage:** updates are downloaded and installed by [electron-updater](https://www.electron.build/auto-update). Every download is checked against the SHA-512 hash in the release's `latest-linux.yml` before it replaces the app.
+- **macOS and rpm:** the app never downloads or installs anything itself. It opens the download in your browser.
+
+The hash check catches broken or altered downloads. It does not protect against someone who takes over the GitHub account and publishes a bad release, but a manual download from the Releases page wouldn't protect you from that either.
+
 ## Verifying what you run
 
 Release builds are not code signed or notarized. If you want to be sure the app matches this source code, build it yourself:
@@ -93,7 +102,8 @@ Use `npm run build:linux` on Linux.
 
 - The code has not been audited by an independent security firm.
 - Release builds are not signed or notarized (see above).
-- The app does not update itself. Security fixes only reach you when you install a new version.
+- Only the AppImage installs updates itself. On macOS and with the rpm, security fixes only reach you when you install the new version by hand. Update checks don't run on their own unless you turn that on.
+- Since builds aren't signed, updates are only verified against the hash published in the same GitHub release, not against a signature.
 - Plain JSON files (hosts, snippets, known hosts, settings) are not encrypted. Only secrets are.
 - After the vault locks, the key is wiped, but decrypted secrets can stay in memory until JavaScript's garbage collector frees them.
 - Malware running as your user account can read everything the app can see while the vault is unlocked. No app can fully protect against that.

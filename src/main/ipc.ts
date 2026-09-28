@@ -1,9 +1,10 @@
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, posix } from 'node:path'
-import { BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
 import type { KeyType } from '../shared/types'
 import type { Ask, Core } from './core'
 import { PendingPrompts } from './prompts'
+import { checkForUpdate, downloadUpdate, restartToUpdate } from './updates'
 
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
@@ -190,6 +191,19 @@ export function registerIpc(core: Core, getWindow: () => BrowserWindow | null): 
   handle('sftp:rename', async (id, from, to) => (await sftp(id)).rename(str(from, 'from'), str(to, 'to')))
   handle('sftp:remove', async (id, path, isDir) => (await sftp(id)).remove(str(path, 'path'), isDir === true))
   handle('sftp:mkdir', async (id, path) => (await sftp(id)).mkdir(str(path, 'path')))
+
+  const isAppImage = !!process.env.APPIMAGE
+  handle('updates:check', () =>
+    checkForUpdate(app.getVersion(), { platform: process.platform, arch: process.arch, isAppImage })
+  )
+  handle('updates:download', () => {
+    if (!isAppImage) throw new Error('Only the AppImage can install updates itself')
+    return downloadUpdate()
+  })
+  handle('updates:restart', () => {
+    if (!isAppImage) throw new Error('Only the AppImage can install updates itself')
+    return restartToUpdate()
+  })
 
   handle('app:openExternal', async (url) => {
     const u = str(url, 'url')

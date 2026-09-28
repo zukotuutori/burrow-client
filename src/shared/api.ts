@@ -11,6 +11,7 @@ import type {
   Snippet,
   SnippetImportResult,
   SyncStatus,
+  UpdateInfo,
   VaultStatus
 } from './types'
 
@@ -103,6 +104,12 @@ export interface BurrowApi {
     remove(id: string, path: string, isDir: boolean): Promise<void>
     mkdir(id: string, path: string): Promise<void>
     pathForFile(file: File): string
+  }
+  updates: {
+    check(): Promise<UpdateInfo>
+    /** AppImage only. Resolves once the update is downloaded and verified. */
+    download(): Promise<void>
+    restart(): Promise<void>
   }
   openExternal(url: string): Promise<void>
 }

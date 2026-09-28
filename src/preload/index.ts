@@ -106,6 +106,11 @@ const api: BurrowApi = {
     mkdir: (id, path) => invoke('sftp:mkdir', id, path),
     pathForFile: (file) => webUtils.getPathForFile(file)
   },
+  updates: {
+    check: () => invoke('updates:check'),
+    download: () => invoke('updates:download'),
+    restart: () => invoke('updates:restart')
+  },
   openExternal: (url) => invoke('app:openExternal', url)
 }
 

@@ -46,6 +46,10 @@ Burrow keeps your hosts, keys and passwords on your own machine. Secrets sit in 
 - The window is hidden from screenshots and screen recordings on macOS (can be turned off)
 - Optional end-to-end encrypted sync to a server you run
 
+**Updates**
+- Check for a new version from Settings, or automatically on startup (off by default)
+- The AppImage downloads, verifies and installs updates itself. On macOS and with the rpm you get a download link
+
 ## Install
 
 Grab the latest build from the [Releases page](https://github.com/zukotuutori/ssh-client/releases).
@@ -72,6 +76,12 @@ Everywhere else, use the AppImage:
 chmod +x Burrow*.AppImage
 ./Burrow*.AppImage
 ```
+
+### Updating
+
+Go to **Settings → Updates** and click **Check for updates**. The AppImage can download and install the new version by itself. On macOS and with the rpm, Burrow opens the download in your browser and you install it like the first time. Your data stays where it is.
+
+Burrow only contacts GitHub when you click the button, or at startup if you turn that on.
 
 ## Getting started
 
@@ -154,6 +164,15 @@ The code is split the usual Electron way:
 - `src/main` runs in Node.js and does everything that matters: SSH, SFTP, the vault, storage and sync.
 - `src/renderer` is the React UI. It runs sandboxed, has no Node.js access and only talks to the main process through the small API in `src/preload`.
 - `server/` is the optional sync server.
+
+### Publishing a release
+
+1. Set the new version in `package.json`.
+2. Build on a Mac (`npm run build:mac`) and on Linux (`npm run build:linux`).
+3. Create a GitHub release whose tag is the version with a `v` in front, for example `v1.1.0`.
+4. Upload the `.dmg`, the `.AppImage`, the `.rpm` and `latest-linux.yml` from `dist/`.
+
+`latest-linux.yml` holds the SHA-512 hash of the AppImage, so it has to come from the same build. Without it, AppImage users can still see the update but not install it from inside the app.
 
 Bug reports and pull requests are welcome. For anything security related, please read [SECURITY.md](SECURITY.md) first and report it privately.
 

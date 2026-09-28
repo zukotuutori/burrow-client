@@ -28,7 +28,7 @@ Out of scope: problems that need malware already running as your user, a machine
 | 1.x (latest release) | Yes |
 | Anything older | No |
 
-To see whether you're on the latest version, use **Settings → Updates**, or look at the [Releases page](https://github.com/zukotuutori/ssh-client/releases).
+To see whether you're on the latest version, use **Settings → Updates**, or look at the [Releases page](https://github.com/zukotuutori/burrow-client/releases).
 
 ## How your data is protected
 
@@ -90,8 +90,8 @@ The hash check catches broken or altered downloads. It does not protect against 
 Release builds are not code signed or notarized. If you want to be sure the app matches this source code, build it yourself:
 
 ```bash
-git clone https://github.com/zukotuutori/ssh-client.git
-cd ssh-client
+git clone https://github.com/zukotuutori/burrow-client.git
+cd burrow-client
 npm ci
 npm run build:mac
 ```

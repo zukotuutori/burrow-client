@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkForUpdate, isNewer, pickAsset } from '../src/main/updates'
 
-const DL = 'https://github.com/zukotuutori/ssh-client/releases/download/v1.1.0/'
+const DL = 'https://github.com/zukotuutori/burrow-client/releases/download/v1.1.0/'
 const asset = (name: string) => ({ name, browser_download_url: DL + name })
 const ASSETS = [
   asset('Burrow.Client-1.1.0-arm64.dmg'),
@@ -53,7 +53,7 @@ describe('pickAsset', () => {
 describe('checkForUpdate', () => {
   const release = {
     tag_name: 'v1.1.0',
-    html_url: 'https://github.com/zukotuutori/ssh-client/releases/tag/v1.1.0',
+    html_url: 'https://github.com/zukotuutori/burrow-client/releases/tag/v1.1.0',
     assets: ASSETS
   }
   const respond = (status: number, body: unknown) => async () => new Response(JSON.stringify(body), { status })

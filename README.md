@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zukotuutori/ssh-client/releases">Download</a> ·
+  <a href="https://github.com/zukotuutori/burrow-client/releases">Download</a> ·
   <a href="SECURITY.md">Security</a> ·
   <a href="server/README.md">Sync server</a> ·
   <a href="https://ko-fi.com/zukotuutori">Support on Ko-fi</a>
@@ -52,7 +52,7 @@ Burrow keeps your hosts, keys and passwords on your own machine. Secrets sit in 
 
 ## Install
 
-Grab the latest build from the [Releases page](https://github.com/zukotuutori/ssh-client/releases).
+Grab the latest build from the [Releases page](https://github.com/zukotuutori/burrow-client/releases).
 
 ### macOS
 
@@ -133,8 +133,8 @@ If a file gets damaged, Burrow tells you on startup and offers to reset it. The 
 You need Node.js. It's developed and tested on Node 24.
 
 ```bash
-git clone https://github.com/zukotuutori/ssh-client.git
-cd ssh-client
+git clone https://github.com/zukotuutori/burrow-client.git
+cd burrow-client
 npm install
 ```
 

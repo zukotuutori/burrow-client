@@ -7,7 +7,7 @@
   "author": "Zukotuutori",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zukotuutori/ssh-client.git"
+    "url": "https://github.com/zukotuutori/burrow-client.git"
   },
   "main": "out/main/index.js",
   "scripts": {
@@ -57,7 +57,7 @@
     "publish": {
       "provider": "github",
       "owner": "zukotuutori",
-      "repo": "ssh-client"
+      "repo": "burrow-client"
     },
     "electronFuses": {
       "runAsNode": false,

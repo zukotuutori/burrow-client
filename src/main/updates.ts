@@ -1,7 +1,7 @@
 import type { AppUpdater } from 'electron-updater'
 import type { UpdateInfo } from '../shared/types'
 
-const REPO = 'zukotuutori/ssh-client'
+const REPO = 'zukotuutori/burrow-client'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`
 const RELEASE_PAGES = `https://github.com/${REPO}/releases/`
 const DOWNLOADS = `${RELEASE_PAGES}download/`

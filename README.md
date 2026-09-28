@@ -64,13 +64,7 @@ You only need to do this once. If you'd rather not trust a downloaded binary, [b
 
 ### Linux
 
-On Fedora and other RPM based distributions:
-
-```bash
-sudo dnf install ./Burrow*.rpm
-```
-
-Everywhere else, use the AppImage:
+Use the AppImage:
 
 ```bash
 chmod +x Burrow*.AppImage

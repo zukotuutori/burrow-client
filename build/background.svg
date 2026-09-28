@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="380" viewBox="0 0 540 380">
+  <defs>
+    <style>
+      .mono { font-family: Menlo, 'SF Mono', Monaco, monospace; font-size: 12px; }
+      .prompt { fill: #6f9bff; }
+      .cmd { fill: #e6e8ee; }
+      .out { fill: #7d8494; }
+      .ok { fill: #5fd38d; }
+    </style>
+  </defs>
+  <rect width="540" height="380" fill="#0d0f13"/>
+  <!-- Terminal session -->
+  <text class="mono" x="24" y="36"><tspan class="prompt">~ $ </tspan><tspan class="cmd">ssh you@burrow</tspan></text>
+  <text class="mono" x="24" y="56"><tspan class="ok">✓ </tspan><tspan class="out">Connected. Welcome to Burrow Client.</tspan></text>
+  <text class="mono" x="24" y="76"><tspan class="prompt">~ $ </tspan><tspan class="cmd">mv "Burrow Client.app" /Applications</tspan></text>
+  <!-- Arrow between the app icon (x=140) and the Applications link (x=400), both at y=190 -->
+  <path d="M212 190 H318" stroke="#5a86fa" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12" fill="none"/>
+  <path d="M314 176 L332 190 L314 204" stroke="#6f9bff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text class="mono" x="24" y="344"><tspan class="out"># drag the app into Applications to install</tspan></text>
+  <text class="mono" x="24" y="364"><tspan class="prompt">~ $ </tspan></text>
+  <rect x="58" y="354" width="7" height="13" fill="#e6e8ee"/>
+</svg>

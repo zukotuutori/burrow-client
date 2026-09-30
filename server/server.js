@@ -2,6 +2,7 @@
 // No dependencies: node:http, node:crypto and node:sqlite ship with Node 24.
 import { createServer } from 'node:http'
 import { createHash, timingSafeEqual } from 'node:crypto'
+import { BlockList, isIPv6 } from 'node:net'
 import { DatabaseSync } from 'node:sqlite'
 
 const PORT = Number(process.env.PORT ?? 3000)
@@ -13,6 +14,8 @@ const TRUST_PROXY = process.env.TRUST_PROXY === '1'
 const MAX_BODY = 5 * 1024 * 1024
 const MAX_FAILS = 10
 const LOCKOUT_MS = 15 * 60_000
+// Caps the memory used for tracking failed attempts. When full, the oldest entry is dropped.
+const MAX_TRACKED_IPS = 10_000
 
 // ---------- Database ----------
 
@@ -92,9 +95,21 @@ const isSealed = (d) =>
 
 const fails = new Map() // ip -> { count, until }
 
+// A reverse proxy on the same server or in Docker connects from one of these. X-Real-IP from anywhere else
+// is ignored, so a client that reaches the server directly cannot make up an address to dodge the lockout.
+const proxyNets = new BlockList()
+proxyNets.addSubnet('127.0.0.0', 8)
+proxyNets.addSubnet('10.0.0.0', 8)
+proxyNets.addSubnet('172.16.0.0', 12)
+proxyNets.addSubnet('192.168.0.0', 16)
+proxyNets.addAddress('::1', 'ipv6')
+proxyNets.addSubnet('fc00::', 7, 'ipv6')
+
 function clientIp(req) {
+  const peer = req.socket.remoteAddress ?? ''
   const real = req.headers['x-real-ip']
-  return TRUST_PROXY && typeof real === 'string' && real ? real : req.socket.remoteAddress
+  const fromProxy = TRUST_PROXY && proxyNets.check(peer, isIPv6(peer) ? 'ipv6' : 'ipv4')
+  return fromProxy && typeof real === 'string' && real ? real : peer
 }
 
 function checkLimit(ip) {
@@ -105,6 +120,7 @@ function checkLimit(ip) {
 }
 
 function noteFail(ip) {
+  if (!fails.has(ip) && fails.size >= MAX_TRACKED_IPS) fails.delete(fails.keys().next().value)
   const f = fails.get(ip) ?? { count: 0, until: 0 }
   if (Date.now() >= f.until) f.count = 0
   f.count++

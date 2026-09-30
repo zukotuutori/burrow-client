@@ -13,7 +13,7 @@ It is a single file (`server.js`) with no dependencies. It needs Node.js 24 or n
 | `PORT` | `3000` | Port the server listens on. |
 | `DB_PATH` | `./sync.db` | SQLite database file. |
 | `REGISTRATION_CODE` | empty | Invite code needed to create an account. Empty turns registration off. |
-| `TRUST_PROXY` | off | Set to `1` only when the server can be reached through your reverse proxy alone, and that proxy overwrites `X-Real-IP` with the client's address. The address is used to slow down repeated failed logins. |
+| `TRUST_PROXY` | off | Set to `1` only when the server can be reached through your reverse proxy alone, and that proxy overwrites `X-Real-IP` with the client's address. The address is used to slow down repeated failed logins. The header is only used when the connection comes from a local or private address (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`), which is where a proxy on the same server or in Docker connects from. |
 
 The server speaks plain HTTP and has no TLS of its own. Always put it behind a reverse proxy that handles HTTPS, and never expose its port to the internet directly. The app refuses sync servers that don't use HTTPS, except `localhost`.
 

@@ -69,7 +69,7 @@ export function SettingsView() {
         </Field>
         <Field
           label="Host status"
-          hint="Shows a green or red dot on each host. Burrow opens a short connection to every saved host every 30 seconds while the host list is open."
+          hint="Shows a green or red dot on each host. Burrow opens a short connection to every saved host when you open the host list, after you add or change a host, and when you click refresh."
         >
           <div className="segmented">
             {([true, false] as const).map((on) => (

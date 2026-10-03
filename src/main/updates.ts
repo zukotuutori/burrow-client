@@ -34,8 +34,8 @@ const ARCH_NAMES: Record<string, RegExp> = { arm64: /arm64|aarch64/i, x64: /x64|
 
 /**
  * The release file for this system: the dmg on macOS, the AppImage or rpm on Linux, depending on how Burrow
- * was installed. electron-builder leaves the architecture out of x64 Linux file names, so a file without any
- * architecture counts as x64.
+ * was installed. Files without an architecture in the name count as the one we build on that platform:
+ * arm64 for the dmg, x64 on Linux.
  */
 export function pickAsset(assets: ReleaseAsset[], platform: string, arch: string, isAppImage: boolean): ReleaseAsset | undefined {
   const ext = platform === 'darwin' ? '.dmg' : platform === 'linux' ? (isAppImage ? '.appimage' : '.rpm') : undefined
@@ -46,7 +46,7 @@ export function pickAsset(assets: ReleaseAsset[], platform: string, arch: string
   return (
     files.find((a) => own.test(a.name)) ??
     files.find((a) => /universal/i.test(a.name)) ??
-    (arch === 'x64' ? files.find((a) => !other.some((re) => re.test(a.name))) : undefined)
+    (arch === (platform === 'darwin' ? 'arm64' : 'x64') ? files.find((a) => !other.some((re) => re.test(a.name))) : undefined)
   )
 }
 

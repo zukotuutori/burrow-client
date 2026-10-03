@@ -47,6 +47,7 @@
   "build": {
     "appId": "dev.burrow.client",
     "productName": "Burrow Client",
+    "artifactName": "burrowclient.${ext}",
     "directories": {
       "output": "dist"
     },

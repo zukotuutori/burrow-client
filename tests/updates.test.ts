@@ -44,6 +44,14 @@ describe('pickAsset', () => {
     expect(pickAsset(ASSETS, 'linux', 'x64', false)?.name).toBe('burrow-client-1.1.0.x86_64.rpm')
   })
 
+  it('accepts file names without version or architecture', () => {
+    const plain = [asset('burrowclient.dmg'), asset('burrowclient.AppImage'), asset('burrowclient.rpm')]
+    expect(pickAsset(plain, 'darwin', 'arm64', false)?.name).toBe('burrowclient.dmg')
+    expect(pickAsset(plain, 'darwin', 'x64', false)).toBeUndefined()
+    expect(pickAsset(plain, 'linux', 'x64', true)?.name).toBe('burrowclient.AppImage')
+    expect(pickAsset(plain, 'linux', 'x64', false)?.name).toBe('burrowclient.rpm')
+  })
+
   it('ignores links that do not point to this repository', () => {
     const evil = { name: 'Burrow.Client-1.1.0-arm64.dmg', browser_download_url: 'https://example.com/Burrow.dmg' }
     expect(pickAsset([evil], 'darwin', 'arm64', false)).toBeUndefined()

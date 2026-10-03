@@ -67,8 +67,8 @@ You only need to do this once. If you'd rather not trust a downloaded binary, [b
 Use the AppImage:
 
 ```bash
-chmod +x Burrow*.AppImage
-./Burrow*.AppImage
+chmod +x burrowclient.AppImage
+./burrowclient.AppImage
 ```
 
 ### Updating

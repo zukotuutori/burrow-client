@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import type { BurrowApi } from '../../shared/api'
 
 declare global {

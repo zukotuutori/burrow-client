@@ -66,6 +66,11 @@ export const BookIcon = () => (
     <path d="M4 19V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h14" />
   </Svg>
 )
+export const BulbIcon = () => (
+  <Svg>
+    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+  </Svg>
+)
 export const CoffeeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M17 8h1a4 4 0 0 1 0 8h-1" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />

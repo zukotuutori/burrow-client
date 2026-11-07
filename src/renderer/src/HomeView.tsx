@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { api } from './api'
 import { useData } from './data'
-import { BookIcon, BurrowMark, CodeIcon, CoffeeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
+import { BookIcon, BulbIcon, BurrowMark, CodeIcon, CoffeeIcon, KeyIcon, LockIcon, ServerIcon, SettingsIcon, ShieldIcon, TerminalIcon } from './icons'
 import { useAction } from './toast'
 import { HostsView } from './views/HostsView'
 import { KeychainView } from './views/KeychainView'
@@ -63,6 +63,13 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
           onClick={() => void api.openExternal('https://zukotuutori.dev/burrowclient/documentation')}
         >
           <BookIcon /> Documentation
+        </button>
+        <button
+          className="nav-item"
+          title="Request a feature on the website"
+          onClick={() => void api.openExternal('https://zukotuutori.dev/contact')}
+        >
+          <BulbIcon /> Request a feature
         </button>
         <span className="app-version">v{__APP_VERSION__}</span>
         {update && (

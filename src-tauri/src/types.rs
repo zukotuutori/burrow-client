@@ -93,8 +93,9 @@ pub enum Theme {
     Light,
 }
 
+/// Fields added in later versions are missing from older files; those get the default.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Settings {
     pub font_family: String,
     pub font_size: u32,

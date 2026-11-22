@@ -1,3 +1,6 @@
+pub mod core;
+#[cfg(test)]
+mod core_tests;
 pub mod error;
 pub mod keys;
 pub mod local_shell;

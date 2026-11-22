@@ -1,3 +1,4 @@
+pub mod auto_lock;
 pub mod core;
 #[cfg(test)]
 mod core_tests;

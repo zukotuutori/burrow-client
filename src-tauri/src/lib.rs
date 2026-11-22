@@ -10,6 +10,7 @@ pub mod ssh;
 pub mod store;
 pub mod sync;
 pub mod types;
+pub mod updates;
 pub mod utf8;
 pub mod validate;
 pub mod vault;

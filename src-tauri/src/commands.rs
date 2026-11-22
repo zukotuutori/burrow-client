@@ -427,6 +427,22 @@ pub fn app_open_external(url: String) {
     open_external_url(&url);
 }
 
+#[tauri::command]
+pub async fn app_confirm(app: AppHandle, window: WebviewWindow, message: String) -> Result<bool> {
+    use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
+    blocking(move || {
+        Ok(app
+            .dialog()
+            .message(message)
+            .title("Burrow Client")
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancel)
+            .parent(&window)
+            .blocking_show())
+    })
+    .await
+}
+
 /// Every command, for the invoke handler and the permission list in build.rs.
 #[macro_export]
 macro_rules! all_commands {
@@ -485,6 +501,7 @@ macro_rules! all_commands {
             $crate::commands::updates_download,
             $crate::commands::updates_restart,
             $crate::commands::app_open_external,
+            $crate::commands::app_confirm,
         ]
     };
 }

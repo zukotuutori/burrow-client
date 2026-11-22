@@ -78,8 +78,8 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
     run(async () => {
       if (await api.sftp.download(sessionId, join(path, sel.name))) toast(`Downloaded ${sel.name}`)
     })
-  const remove = () => {
-    if (path && sel && confirm(`Delete ${sel.name}?`)) void op(() => api.sftp.remove(sessionId, join(path, sel.name), sel.isDir))
+  const remove = async () => {
+    if (path && sel && (await api.confirm(`Delete ${sel.name}?`))) void op(() => api.sftp.remove(sessionId, join(path, sel.name), sel.isDir))
   }
   onDropRef.current = (paths: string[]) => {
     if (path && paths.length) {

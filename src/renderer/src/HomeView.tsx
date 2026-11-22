@@ -34,7 +34,7 @@ export function HomeView({ onConnect, onOpenLocal, onLock, visible }: Props) {
   const run = useAction()
 
   const reset = async (file: string) => {
-    if (!confirm(`Reset ${file}? A backup copy is kept next to it.`)) return
+    if (!(await api.confirm(`Reset ${file}? A backup copy is kept next to it.`))) return
     if (await run(() => api.files.reset(file), `${file} was reset`)) void reload()
   }
 

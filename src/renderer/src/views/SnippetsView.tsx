@@ -111,7 +111,7 @@ export function SnippetForm({ snippet, exists, onDone }: { snippet: Snippet; exi
     if (await run(() => api.snippets.save({ id: snippet.id, name, command, tags: tagList, profileIds: hosts }))) onDone()
   }
   const remove = async () => {
-    if (confirm(`Delete snippet "${snippet.name}"?`) && (await run(() => api.snippets.remove(snippet.id)))) onDone()
+    if ((await api.confirm(`Delete snippet "${snippet.name}"?`)) && (await run(() => api.snippets.remove(snippet.id)))) onDone()
   }
 
   return (

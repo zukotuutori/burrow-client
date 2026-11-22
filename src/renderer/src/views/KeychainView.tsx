@@ -17,7 +17,7 @@ export function KeychainView() {
     void reload()
   }
   const remove = async (id: string, name: string) => {
-    if (confirm(`Delete key "${name}"? This cannot be undone.`) && (await run(() => api.keys.remove(id)))) void reload()
+    if ((await api.confirm(`Delete key "${name}"? This cannot be undone.`)) && (await run(() => api.keys.remove(id)))) void reload()
   }
 
   return (

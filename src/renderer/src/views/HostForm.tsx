@@ -36,7 +36,7 @@ export function HostForm({ profile, onDone }: { profile: Profile; onDone: () => 
     if (await run(() => api.profiles.save(p, pw))) onDone()
   }
   const remove = async () => {
-    if (confirm(`Delete ${profile.name}?`) && (await run(() => api.profiles.remove(profile.id)))) onDone()
+    if ((await api.confirm(`Delete ${profile.name}?`)) && (await run(() => api.profiles.remove(profile.id)))) onDone()
   }
   const forget = () =>
     run(async () => {

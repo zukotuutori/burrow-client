@@ -10,7 +10,7 @@ export function KnownHostsView() {
   const entries = Object.entries(knownHosts).sort(([a], [b]) => a.localeCompare(b))
 
   const remove = async (id: string) => {
-    if (!confirm(`Forget ${id}? You will be asked to trust it again on the next connection.`)) return
+    if (!(await api.confirm(`Forget ${id}? You will be asked to trust it again on the next connection.`))) return
     if (await run(() => api.knownHosts.remove(id))) void reload()
   }
 

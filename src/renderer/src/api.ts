@@ -156,5 +156,6 @@ export const api: BurrowApi = {
     download: () => invoke('updates_download'),
     restart: () => invoke('updates_restart')
   },
-  openExternal: (url) => invoke('app_open_external', { url })
+  openExternal: (url) => invoke('app_open_external', { url }),
+  confirm: (message) => invoke('app_confirm', { message })
 }

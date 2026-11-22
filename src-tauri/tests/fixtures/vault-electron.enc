@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "kdf": "scrypt",
+  "N": 1024,
+  "r": 8,
+  "p": 1,
+  "salt": "LYj6FgMqRC/mXc7NvxKvdg==",
+  "iv": "Z6qwIN4lVEoAfVqH",
+  "tag": "7Ae2MmskVxUVvpeR2eXnUA==",
+  "ciphertext": "syKeXwGywI35JI+5/k1XhF2/t2kzc39uU3Vb6JPIRp2wA5QrXCTzSsC5SG+edHrixtPtLhlje57o58JLFDGycfSzVD6J49JqNDljXJ5oojvI5fEao2QMzbOY4iCNHTP0MoH0wmM3"
+}

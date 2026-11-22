@@ -1,0 +1,15 @@
+{
+  "username": "Alice",
+  "password": "Sync password 1!",
+  "N": 1024,
+  "r": 8,
+  "p": 1,
+  "authKey": "V0zzadHzJsRlEftoB8zq7auVXyW7Ra2x0izyiXB+K64=",
+  "encKey": "hRPk7SoKteStcd0bD2AFPHDI4KzOS2Biepe7NKlRdDs=",
+  "blob": {
+    "v": 1,
+    "iv": "AmvSclhV6YeWbDgb",
+    "tag": "KtQfodTIv/W+eIgJMM+h3A==",
+    "data": "BRMwOgp1fWLcPOGo/2SQWip/NSNdVcsc"
+  }
+}

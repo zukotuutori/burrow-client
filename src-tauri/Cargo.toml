@@ -23,6 +23,13 @@ thiserror = { version = "2.0.21", default-features = false }
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
 regex = "1.13.2"
 uuid = { version = "1.26.1", features = ["v4"] }
+scrypt = "0.11"
+aes-gcm = "0.10"
+sha2 = "0.10"
+base64 = "0.22"
+rand = "0.8"
+zeroize = { version = "1.9.2", features = ["derive"] }
+subtle = "2.6.1"
 
 [profile.release]
 codegen-units = 1

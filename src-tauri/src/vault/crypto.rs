@@ -4,7 +4,6 @@ use aes_gcm::aead::{Aead, KeyInit, Payload};
 use aes_gcm::{Aes256Gcm, Nonce};
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine;
-use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use zeroize::Zeroizing;
@@ -61,7 +60,7 @@ pub fn derive_key(password: &str, salt: &[u8], params: KdfParams) -> Result<Key>
 
 pub fn random_bytes<const N: usize>() -> [u8; N] {
     let mut b = [0u8; N];
-    rand::rngs::OsRng.fill_bytes(&mut b);
+    getrandom::fill(&mut b).expect("the system random number generator failed");
     b
 }
 

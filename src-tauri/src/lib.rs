@@ -1,4 +1,5 @@
 pub mod error;
+pub mod keys;
 pub mod password_policy;
 pub mod store;
 pub mod types;

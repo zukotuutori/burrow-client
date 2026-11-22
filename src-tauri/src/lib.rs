@@ -1,6 +1,7 @@
 pub mod error;
 pub mod keys;
 pub mod password_policy;
+pub mod ssh;
 pub mod store;
 pub mod types;
 pub mod validate;

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Burrow Client",
+  "version": "../package.json",
+  "identifier": "dev.burrow.client",
+  "build": {
+    "beforeDevCommand": "npm run dev:ui",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build:ui",
+    "frontendDist": "../out/renderer"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": false,
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'",
+      "dangerousDisableAssetCspModification": ["style-src"],
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "appimage", "rpm"],
+    "category": "DeveloperTool",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.png"],
+    "macOS": {
+      "dmg": {
+        "background": "../build/background.png",
+        "windowSize": { "width": 540, "height": 380 },
+        "appPosition": { "x": 140, "y": 190 },
+        "applicationFolderPosition": { "x": 400, "y": 190 }
+      }
+    }
+  }
+}

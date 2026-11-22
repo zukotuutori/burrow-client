@@ -11,6 +11,11 @@
   },
   "main": "out/main/index.js",
   "scripts": {
+    "dev:ui": "vite",
+    "build:ui": "vite build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit",
@@ -26,6 +31,8 @@
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.12.5",
+    "@tauri-apps/cli": "^2.12.6",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

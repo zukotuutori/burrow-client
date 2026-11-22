@@ -7,3 +7,7 @@ dist/
 # sync server secrets and local test databases
 server/.env
 server/*.db
+
+# Rust build output and generated Tauri schemas
+src-tauri/target/
+src-tauri/gen/

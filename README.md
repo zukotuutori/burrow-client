@@ -124,7 +124,15 @@ If a file gets damaged, Burrow tells you on startup and offers to reset it. The 
 
 ## Building from source
 
-You need Node.js. It's developed and tested on Node 24.
+You need [Rust](https://rustup.rs) and Node.js. It's developed and tested with Rust 1.100 and Node 24.
+
+On Linux you also need the WebKitGTK and X11 development packages. On Fedora:
+
+```bash
+sudo dnf install webkit2gtk4.1-devel openssl-devel librsvg2-devel libXScrnSaver-devel rpm-build
+```
+
+Then get the code:
 
 ```bash
 git clone https://github.com/zukotuutori/burrow-client.git
@@ -142,31 +150,40 @@ npm run build:mac
 npm run build:linux
 ```
 
-The Linux build needs `rpm-build` (`sudo dnf install rpm-build` on Fedora) and has to run on Linux.
+The Linux build has to run on Linux.
 
 ## Development
 
 ```bash
 npm run dev          # the app with hot reload
 npm run dev:server   # test SSH + SFTP server on 127.0.0.1:2222 (user dev, password dev)
-npm test             # unit and integration tests
+npm test             # UI tests and the Rust tests
 npm run typecheck
 ```
 
-The code is split the usual Electron way:
+`npm run dev` uses your real data folder. To try something out on a throwaway folder instead, set `BURROW_DATA_DIR` (only debug builds read it):
 
-- `src/main` runs in Node.js and does everything that matters: SSH, SFTP, the vault, storage and sync.
-- `src/renderer` is the React UI. It runs sandboxed, has no Node.js access and only talks to the main process through the small API in `src/preload`.
+```bash
+BURROW_DATA_DIR=/tmp/burrow-dev npm run dev
+```
+
+The Rust tests start `server/server.js` for the sync tests, so they need Node.js too. One SFTP test runs against the dev server and is skipped unless you ask for it: start `npm run dev:server`, then run `cargo test --manifest-path src-tauri/Cargo.toml -- --ignored`.
+
+The app is built with [Tauri](https://tauri.app):
+
+- `src-tauri` is the Rust backend and does everything that matters: SSH and SFTP (with [russh](https://github.com/Eugeny/russh)), local shells, the vault, storage, sync and updates.
+- `src/renderer` is the React UI. It runs in the system webview and can only call the backend commands in `src-tauri/src/commands.rs`, through the small API in `src/renderer/src/api.ts`.
+- `src/shared` holds the types both sides agree on.
 - `server/` is the optional sync server.
 
 ### Publishing a release
 
-1. Set the new version in `package.json`.
+1. Set the new version in `package.json`. Tauri reads it from there.
 2. Build on a Mac (`npm run build:mac`) and on Linux (`npm run build:linux`).
 3. Create a GitHub release whose tag is the version with a `v` in front, for example `v1.1.0`.
 4. Upload the `.dmg`, the `.AppImage`, the `.rpm` and `latest-linux.yml` from `dist/`.
 
-`latest-linux.yml` holds the SHA-512 hash of the AppImage, so it has to come from the same build. Without it, AppImage users can still see the update but not install it from inside the app.
+`latest-linux.yml` holds the SHA-512 hash of the AppImage, so it has to come from the same build. `scripts/collect-release.mjs` writes it and copies the bundles to `dist/` under the names above; both build commands run it. Without it, AppImage users can still see the update but not install it from inside the app.
 
 Bug reports and pull requests are welcome. For anything security related, please read [SECURITY.md](SECURITY.md) first and report it privately.
 

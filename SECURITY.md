@@ -45,19 +45,19 @@ Everything else is stored as plain JSON: host labels, addresses, user names, not
 
 ### Locking
 
-The vault locks when you click Lock, close the window, put the computer to sleep, lock the screen, or leave the computer idle for the time set in Settings (15 minutes by default). Locking closes every SSH session and local shell.
+The vault locks when you click Lock, close the window, lock the screen (macOS), or leave the computer idle for the time set in Settings (15 minutes by default). It also locks as soon as the computer wakes up from sleep. Locking closes every SSH session and local shell.
 
 ### Inside the app
 
 The app can open shells and SSH sessions, so code running in its window could do a lot of damage. The window is locked down to match:
 
-- Chromium's sandbox and context isolation are on, and the UI has no Node.js access.
-- A strict Content Security Policy only allows the app's own scripts. There is no inline script, `eval` or remote code.
-- The main process only accepts messages from the app's own window and checks the type of every argument.
+- The UI runs in the system webview (WKWebView on macOS, WebKitGTK on Linux) and has no access to files, processes or the network of its own. Everything goes through the Rust backend.
+- The backend's commands are only allowed for the app's own window, through Tauri's permission system. Tauri checks the type of every argument, and the backend validates everything it stores.
+- A strict Content Security Policy only allows the app's own scripts. There is no inline script, `eval` or remote code. The UI files are built into the app binary.
 - Navigation and new windows are blocked. Only `http` and `https` links open, and they open in your normal browser.
-- Camera, microphone, location, notifications and every other web permission are denied, except clipboard access for copy and paste.
-- Packaged builds have no DevTools and refuse to start with remote debugging switches. Electron fuses turn off `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS` and `--inspect`, and the app only loads from its integrity-checked `app.asar`.
-- The spellchecker is off, so no dictionaries are downloaded and nothing you type is sent anywhere.
+- The UI asks for no web permissions like camera, microphone, location or notifications.
+- Release builds have no web inspector.
+- Spellchecking is off for the whole UI.
 
 ### SSH
 
@@ -80,7 +80,7 @@ The server keeps registration closed unless an invite code is set, blocks an IP 
 
 Burrow only contacts GitHub when you click **Check for updates**, or once per start if you turned on the startup check (it's off by default). The request goes to `api.github.com` and carries nothing about you except your IP address. Download links from the answer are only used if they point to this repository's releases.
 
-- **AppImage:** updates are downloaded and installed by [electron-updater](https://www.electron.build/auto-update). Every download is checked against the SHA-512 hash in the release's `latest-linux.yml` before it replaces the app.
+- **AppImage:** the app downloads the new AppImage next to the old one and checks it against the SHA-512 hash in the release's `latest-linux.yml`. Only a download that matches replaces the app.
 - **macOS and rpm:** the app never downloads or installs anything itself. It opens the download in your browser.
 
 The hash check catches broken or altered downloads. It does not protect against someone who takes over the GitHub account and publishes a bad release, but a manual download from the Releases page wouldn't protect you from that either.
@@ -105,7 +105,8 @@ Use `npm run build:linux` on Linux.
 - Only the AppImage installs updates itself. On macOS and with the rpm, security fixes only reach you when you install the new version by hand. Update checks don't run on their own unless you turn that on.
 - Since builds aren't signed, updates are only verified against the hash published in the same GitHub release, not against a signature.
 - Plain JSON files (hosts, snippets, known hosts, settings) are not encrypted. Only secrets are.
-- After the vault locks, the key is wiped, but decrypted secrets can stay in memory until JavaScript's garbage collector frees them.
+- When the vault locks, its key and the secrets it holds are overwritten with zeros. Copies that were handed to an SSH connection or shown in the UI are not wiped that way and stay in memory until they are freed.
+- The screen lock is only noticed on macOS. On Linux the vault still locks after the idle time and after sleep.
 - Malware running as your user account can read everything the app can see while the vault is unlocked. No app can fully protect against that.
 - Hiding the window from screenshots and screen recordings works on macOS but not on Linux.
 - Whoever runs a sync server can see user names, IP addresses, and when and how much data is uploaded. They can't read or change your data, but they can delete it or hand out an older copy.

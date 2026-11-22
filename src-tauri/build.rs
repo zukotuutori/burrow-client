@@ -55,6 +55,7 @@ fn main() {
         "updates_restart",
         "app_open_external",
         "app_confirm",
+        "app_read_clipboard",
     ];
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(commands)))
         .expect("failed to run the Tauri build script");

@@ -170,7 +170,8 @@ pub fn run() {
                 let _ = create_window(app);
             }
         }))
-        .plugin(tauri_plugin_dialog::init());
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init());
     #[cfg(target_os = "macos")]
     let builder = builder.enable_macos_default_menu(false).menu(build_menu);
 

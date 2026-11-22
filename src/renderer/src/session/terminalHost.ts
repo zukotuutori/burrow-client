@@ -148,7 +148,7 @@ export class TerminalHost {
         return false
       }
       if (key === 'v') {
-        void navigator.clipboard.readText().then((text) => this.term.paste(text))
+        void api.readClipboard().then((text) => this.term.paste(text), () => undefined)
         e.preventDefault()
         return false
       }

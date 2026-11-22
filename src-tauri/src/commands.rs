@@ -428,6 +428,12 @@ pub fn app_open_external(url: String) {
 }
 
 #[tauri::command]
+pub fn app_read_clipboard(app: AppHandle) -> Result<String> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    app.clipboard().read_text().map_err(|e| Error::msg(e.to_string()))
+}
+
+#[tauri::command]
 pub async fn app_confirm(app: AppHandle, window: WebviewWindow, message: String) -> Result<bool> {
     use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
     blocking(move || {
@@ -502,6 +508,7 @@ macro_rules! all_commands {
             $crate::commands::updates_restart,
             $crate::commands::app_open_external,
             $crate::commands::app_confirm,
+            $crate::commands::app_read_clipboard,
         ]
     };
 }

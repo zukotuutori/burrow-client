@@ -61,6 +61,7 @@
     "allow-updates-download",
     "allow-updates-restart",
     "allow-app-open-external",
-    "allow-app-confirm"
+    "allow-app-confirm",
+    "allow-app-read-clipboard"
   ]
 }

@@ -119,4 +119,6 @@ export interface BurrowApi {
   openExternal(url: string): Promise<void>
   /** Asks with a native OK/Cancel dialog. The system webview has no working window.confirm. */
   confirm(message: string): Promise<boolean>
+  /** Text on the system clipboard. Read by the backend, since the webview may refuse navigator.clipboard.readText. */
+  readClipboard(): Promise<string>
 }

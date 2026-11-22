@@ -1,3 +1,7 @@
+pub mod error;
+pub mod store;
+pub mod types;
+
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 pub fn run() {

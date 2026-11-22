@@ -281,6 +281,11 @@ impl Core {
         Ok(())
     }
 
+    /// Not inlined into a `match`, so the vault lock is released before any prompt is awaited.
+    fn saved_password(&self, id: &str) -> Result<Option<String>> {
+        self.vault().get_password(id)
+    }
+
     pub fn has_password(&self, id: &str) -> Result<bool> {
         Ok(self.vault().get_password(id)?.is_some())
     }
@@ -606,7 +611,7 @@ impl Core {
         let mut persist = Persist::Nothing;
 
         let auth = match p.auth_type {
-            AuthType::Password => match self.vault().get_password(&p.id)? {
+            AuthType::Password => match self.saved_password(&p.id)? {
                 Some(pw) => Auth::Password(Zeroizing::new(pw)),
                 None => {
                     let ans = ask(Prompt::Password { label: format!("{}@{}", p.user, p.host) }).await;

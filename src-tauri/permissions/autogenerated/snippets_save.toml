@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-snippets-save"
+description = "Enables the snippets_save command without any pre-configured scope."
+commands.allow = ["snippets_save"]
+
+[[permission]]
+identifier = "deny-snippets-save"
+description = "Denies the snippets_save command without any pre-configured scope."
+commands.deny = ["snippets_save"]

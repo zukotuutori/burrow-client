@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-snippets-remove"
+description = "Enables the snippets_remove command without any pre-configured scope."
+commands.allow = ["snippets_remove"]
+
+[[permission]]
+identifier = "deny-snippets-remove"
+description = "Denies the snippets_remove command without any pre-configured scope."
+commands.deny = ["snippets_remove"]

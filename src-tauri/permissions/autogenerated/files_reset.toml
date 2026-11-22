@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-files-reset"
+description = "Enables the files_reset command without any pre-configured scope."
+commands.allow = ["files_reset"]
+
+[[permission]]
+identifier = "deny-files-reset"
+description = "Denies the files_reset command without any pre-configured scope."
+commands.deny = ["files_reset"]

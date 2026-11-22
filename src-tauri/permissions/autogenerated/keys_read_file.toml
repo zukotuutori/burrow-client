@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-keys-read-file"
+description = "Enables the keys_read_file command without any pre-configured scope."
+commands.allow = ["keys_read_file"]
+
+[[permission]]
+identifier = "deny-keys-read-file"
+description = "Denies the keys_read_file command without any pre-configured scope."
+commands.deny = ["keys_read_file"]

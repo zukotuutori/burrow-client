@@ -36,6 +36,9 @@ rand = { version = "0.10", features = ["thread_rng"] }
 getrandom = "0.3"
 portable-pty = "0.9"
 dirs = "7.0.0"
+hkdf = "0.12"
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+url = "2.5.9"
 
 [profile.release]
 codegen-units = 1

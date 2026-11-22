@@ -5,6 +5,7 @@ pub mod password_policy;
 pub mod prompts;
 pub mod ssh;
 pub mod store;
+pub mod sync;
 pub mod types;
 pub mod utf8;
 pub mod validate;

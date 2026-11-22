@@ -1,6 +1,8 @@
 pub mod error;
+pub mod password_policy;
 pub mod store;
 pub mod types;
+pub mod validate;
 
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 

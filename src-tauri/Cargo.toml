@@ -42,6 +42,7 @@ strip = true
 panic = "abort"
 
 [dev-dependencies]
+bytes = "1.12.2"
 tempfile = "3.27.0"
 
 # scrypt and RSA key generation are unusably slow without optimizations, also in debug builds.

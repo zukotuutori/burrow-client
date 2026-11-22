@@ -4,6 +4,7 @@ pub mod password_policy;
 pub mod ssh;
 pub mod store;
 pub mod types;
+pub mod utf8;
 pub mod validate;
 pub mod vault;
 

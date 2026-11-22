@@ -17,6 +17,10 @@ import type {
 
 export type Unsubscribe = () => void
 
+export type FileDrop =
+  | { type: 'enter' | 'over' | 'drop'; x: number; y: number; paths: string[] }
+  | { type: 'leave' }
+
 export interface BurrowApi {
   platform: string
   vault: {
@@ -103,7 +107,8 @@ export interface BurrowApi {
     rename(id: string, from: string, to: string): Promise<void>
     remove(id: string, path: string, isDir: boolean): Promise<void>
     mkdir(id: string, path: string): Promise<void>
-    pathForFile(file: File): string
+    /** Files dragged over or dropped on the window, with their local paths. x and y are CSS pixels. */
+    onFileDrop(cb: (drop: FileDrop) => void): Unsubscribe
   }
   updates: {
     check(): Promise<UpdateInfo>

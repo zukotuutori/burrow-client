@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RemoteEntry } from '../../../shared/types'
 import { api } from '../api'
 import { TextPrompt } from '../components/TextPrompt'
@@ -19,6 +19,9 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog>(null)
   const [dragOver, setDragOver] = useState(false)
+  const asideRef = useRef<HTMLElement>(null)
+  /** The latest drop handler, so the drag and drop subscription does not restart on every render. */
+  const onDropRef = useRef<(paths: string[]) => void>(() => undefined)
 
   const load = useCallback(
     (dir: string) =>
@@ -36,6 +39,17 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
     setEntries([])
     if (sessionId) void run(async () => load(await api.sftp.home(sessionId)))
   }, [sessionId, run, load])
+
+  useEffect(
+    () =>
+      api.sftp.onFileDrop((d) => {
+        const r = asideRef.current?.getBoundingClientRect()
+        const inside = d.type !== 'leave' && !!r && r.width > 0 && d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom
+        setDragOver(inside && d.type !== 'drop')
+        if (inside && d.type === 'drop') onDropRef.current(d.paths)
+      }),
+    []
+  )
 
   if (!sessionId) {
     return (
@@ -67,8 +81,7 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
   const remove = () => {
     if (path && sel && confirm(`Delete ${sel.name}?`)) void op(() => api.sftp.remove(sessionId, join(path, sel.name), sel.isDir))
   }
-  const drop = (files: FileList) => {
-    const paths = [...files].map((f) => api.sftp.pathForFile(f)).filter(Boolean)
+  onDropRef.current = (paths: string[]) => {
     if (path && paths.length) {
       void op(() => api.sftp.uploadPaths(sessionId, path, paths), `Uploaded ${paths.length} file${paths.length === 1 ? '' : 's'}`)
     }
@@ -82,19 +95,7 @@ export function SftpBrowser({ sessionId }: { sessionId: string | null }) {
   }
 
   return (
-    <aside
-      className={`sftp ${dragOver ? 'drag-over' : ''}`}
-      onDragOver={(e) => {
-        e.preventDefault()
-        setDragOver(true)
-      }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setDragOver(false)
-        drop(e.dataTransfer.files)
-      }}
-    >
+    <aside ref={asideRef} className={`sftp ${dragOver ? 'drag-over' : ''}`}>
       <header className="sftp-header">
         <button className="icon-btn" title="Parent folder" disabled={!path || path === '/'} onClick={() => path && load(parentOf(path))}>
           <UpIcon />

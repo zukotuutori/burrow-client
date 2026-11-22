@@ -1,5 +1,6 @@
 pub mod error;
 pub mod keys;
+pub mod local_shell;
 pub mod password_policy;
 pub mod ssh;
 pub mod store;

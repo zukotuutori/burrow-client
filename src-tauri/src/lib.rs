@@ -32,8 +32,14 @@ use crate::sync::crypto::SYNC_KDF;
 use crate::vault::crypto::DEFAULT_KDF;
 
 /// Same folder as the Electron version: ~/Library/Application Support/Burrow Client on macOS,
-/// ~/.config/Burrow Client on Linux.
+/// ~/.config/Burrow Client on Linux. Debug builds can point BURROW_DATA_DIR somewhere else, so trying out a
+/// change does not touch real data.
 fn data_dir() -> PathBuf {
+    if cfg!(debug_assertions) {
+        if let Some(dir) = std::env::var_os("BURROW_DATA_DIR").filter(|d| !d.is_empty()) {
+            return PathBuf::from(dir);
+        }
+    }
     dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("Burrow Client")
 }
 

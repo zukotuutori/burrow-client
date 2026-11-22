@@ -36,7 +36,8 @@ impl PendingPrompts {
         }
     }
 
-    pub fn len(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn len(&self) -> usize {
         self.pending.lock().unwrap().len()
     }
 }

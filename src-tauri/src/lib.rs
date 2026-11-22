@@ -208,10 +208,8 @@ pub fn run() {
         #[cfg(target_os = "macos")]
         RunEvent::ExitRequested { code: None, api, .. } => api.prevent_exit(),
         #[cfg(target_os = "macos")]
-        RunEvent::Reopen { .. } => {
-            if app.get_webview_window("main").is_none() {
-                let _ = create_window(app);
-            }
+        RunEvent::Reopen { .. } if app.get_webview_window("main").is_none() => {
+            let _ = create_window(app);
         }
         _ => {}
     });

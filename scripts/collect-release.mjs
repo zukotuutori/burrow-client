@@ -1,4 +1,4 @@
-// Copies the Tauri bundles to dist/ under the release file names (burrowclient.dmg, .AppImage, .rpm) and writes
+// Copies the Tauri bundles to dist/ under the release file names (burrowclient.dmg, burrowclient.AppImage) and writes
 // latest-linux.yml next to the AppImage. The AppImage update checks its download against the SHA-512 in there.
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -14,8 +14,7 @@ const find = (dir, ext) =>
 
 for (const [dir, ext, name] of [
   ['dmg', '.dmg', 'burrowclient.dmg'],
-  ['appimage', '.AppImage', 'burrowclient.AppImage'],
-  ['rpm', '.rpm', 'burrowclient.rpm']
+  ['appimage', '.AppImage', 'burrowclient.AppImage']
 ]) {
   const [file] = find(dir, ext)
   if (!file) continue

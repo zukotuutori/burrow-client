@@ -85,14 +85,13 @@ static ARM64: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)arm64|aarch64"
 static X64: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)x64|x86_64|amd64").unwrap());
 static UNIVERSAL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)universal").unwrap());
 
-/// The release file for this system: the dmg on macOS, the AppImage or rpm on Linux, depending on how Burrow
-/// was installed. Files without an architecture in the name count as the one we build on that platform:
-/// arm64 for the dmg, x64 on Linux.
+/// The release file for this system: the dmg on macOS, the AppImage on Linux. A Linux build that does not run
+/// from an AppImage (built from source) gets none and is sent to the release page. Files without an
+/// architecture in the name count as the one we build on that platform: arm64 for the dmg, x64 on Linux.
 pub fn pick_asset<'a>(assets: &'a [ReleaseAsset], system: &System) -> Option<&'a ReleaseAsset> {
     let ext = match (system.platform, system.is_app_image) {
         ("darwin", _) => ".dmg",
         ("linux", true) => ".appimage",
-        ("linux", false) => ".rpm",
         _ => return None,
     };
     let (own, other): (&Regex, &Regex) = match system.arch {
@@ -275,7 +274,7 @@ mod tests {
     }
 
     fn assets() -> Vec<ReleaseAsset> {
-        ["Burrow.Client-1.1.0-arm64.dmg", "Burrow.Client-1.1.0.AppImage", "Burrow.Client-1.1.0-arm64.AppImage", "burrow-client-1.1.0.x86_64.rpm", "latest-linux.yml"]
+        ["Burrow.Client-1.1.0-arm64.dmg", "Burrow.Client-1.1.0.AppImage", "Burrow.Client-1.1.0-arm64.AppImage", "latest-linux.yml"]
             .map(asset)
             .to_vec()
     }
@@ -306,16 +305,16 @@ mod tests {
         assert_eq!(pick(&a, sys("darwin", "x64", false)), None);
         assert_eq!(pick(&a, sys("linux", "x64", true)).as_deref(), Some("Burrow.Client-1.1.0.AppImage"));
         assert_eq!(pick(&a, sys("linux", "arm64", true)).as_deref(), Some("Burrow.Client-1.1.0-arm64.AppImage"));
-        assert_eq!(pick(&a, sys("linux", "x64", false)).as_deref(), Some("burrow-client-1.1.0.x86_64.rpm"));
+        assert_eq!(pick(&a, sys("linux", "x64", false)), None);
     }
 
     #[test]
     fn accepts_plain_file_names_and_ignores_foreign_links() {
-        let plain = ["burrowclient.dmg", "burrowclient.AppImage", "burrowclient.rpm"].map(asset).to_vec();
+        let plain = ["burrowclient.dmg", "burrowclient.AppImage"].map(asset).to_vec();
         assert_eq!(pick(&plain, sys("darwin", "arm64", false)).as_deref(), Some("burrowclient.dmg"));
         assert_eq!(pick(&plain, sys("darwin", "x64", false)), None);
         assert_eq!(pick(&plain, sys("linux", "x64", true)).as_deref(), Some("burrowclient.AppImage"));
-        assert_eq!(pick(&plain, sys("linux", "x64", false)).as_deref(), Some("burrowclient.rpm"));
+        assert_eq!(pick(&plain, sys("linux", "x64", false)), None);
         let evil = vec![ReleaseAsset { name: "Burrow.Client-1.1.0-arm64.dmg".into(), url: "https://example.com/Burrow.dmg".into() }];
         assert_eq!(pick(&evil, sys("darwin", "arm64", false)), None);
     }

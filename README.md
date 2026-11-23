@@ -48,7 +48,7 @@ Burrow keeps your hosts, keys and passwords on your own machine. Secrets sit in 
 
 **Updates**
 - Check for a new version from Settings, or automatically on startup (off by default)
-- The AppImage downloads, verifies and installs updates itself. On macOS and with the rpm you get a download link
+- The AppImage downloads, verifies and installs updates itself. On macOS you get a download link
 
 ## Install
 
@@ -73,7 +73,7 @@ chmod +x burrowclient.AppImage
 
 ### Updating
 
-Go to **Settings → Updates** and click **Check for updates**. The AppImage can download and install the new version by itself. On macOS and with the rpm, Burrow opens the download in your browser and you install it like the first time. Your data stays where it is.
+Go to **Settings → Updates** and click **Check for updates**. The AppImage can download and install the new version by itself. On macOS, Burrow opens the download in your browser and you install it like the first time. Your data stays where it is.
 
 Burrow only contacts GitHub when you click the button, or at startup if you turn that on.
 
@@ -129,7 +129,7 @@ You need [Rust](https://rustup.rs) and Node.js. It's developed and tested with R
 On Linux you also need the WebKitGTK and X11 development packages. On Fedora:
 
 ```bash
-sudo dnf install webkit2gtk4.1-devel openssl-devel librsvg2-devel libXScrnSaver-devel rpm-build
+sudo dnf install webkit2gtk4.1-devel openssl-devel librsvg2-devel libXScrnSaver-devel
 ```
 
 Then get the code:
@@ -181,7 +181,7 @@ The app is built with [Tauri](https://tauri.app):
 1. Set the new version in `package.json`. Tauri reads it from there.
 2. Build on a Mac (`npm run build:mac`) and on Linux (`npm run build:linux`).
 3. Create a GitHub release whose tag is the version with a `v` in front, for example `v1.1.0`.
-4. Upload the `.dmg`, the `.AppImage`, the `.rpm` and `latest-linux.yml` from `dist/`.
+4. Upload the `.dmg`, the `.AppImage` and `latest-linux.yml` from `dist/`.
 
 `latest-linux.yml` holds the SHA-512 hash of the AppImage, so it has to come from the same build. `scripts/collect-release.mjs` writes it and copies the bundles to `dist/` under the names above; both build commands run it. Without it, AppImage users can still see the update but not install it from inside the app.
 

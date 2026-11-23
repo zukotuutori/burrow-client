@@ -81,7 +81,7 @@ The server keeps registration closed unless an invite code is set, blocks an IP 
 Burrow only contacts GitHub when you click **Check for updates**, or once per start if you turned on the startup check (it's off by default). The request goes to `api.github.com` and carries nothing about you except your IP address. Download links from the answer are only used if they point to this repository's releases.
 
 - **AppImage:** the app downloads the new AppImage next to the old one and checks it against the SHA-512 hash in the release's `latest-linux.yml`. Only a download that matches replaces the app.
-- **macOS and rpm:** the app never downloads or installs anything itself. It opens the download in your browser.
+- **macOS:** the app never downloads or installs anything itself. It opens the download in your browser.
 
 The hash check catches broken or altered downloads. It does not protect against someone who takes over the GitHub account and publishes a bad release, but a manual download from the Releases page wouldn't protect you from that either.
 
@@ -102,7 +102,7 @@ Use `npm run build:linux` on Linux.
 
 - The code has not been audited by an independent security firm.
 - Release builds are not signed or notarized (see above).
-- Only the AppImage installs updates itself. On macOS and with the rpm, security fixes only reach you when you install the new version by hand. Update checks don't run on their own unless you turn that on.
+- Only the AppImage installs updates itself. On macOS, security fixes only reach you when you install the new version by hand. Update checks don't run on their own unless you turn that on.
 - Since builds aren't signed, updates are only verified against the hash published in the same GitHub release, not against a signature.
 - Plain JSON files (hosts, snippets, known hosts, settings) are not encrypted. Only secrets are.
 - When the vault locks, its key and the secrets it holds are overwritten with zeros. Copies that were handed to an SSH connection or shown in the UI are not wiped that way and stay in memory until they are freed.

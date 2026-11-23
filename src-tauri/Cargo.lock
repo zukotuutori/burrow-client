@@ -555,7 +555,7 @@ checksum = "87a0cf66fd1eb2fb7b822cb78370d82303750809bc6ba855f3f58e517d3238db"
 
 [[package]]
 name = "burrow-client"
-version = "1.1.1"
+version = "2.0.0"
 dependencies = [
  "aes-gcm 0.10.3",
  "base64 0.22.1",

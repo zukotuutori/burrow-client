@@ -5,11 +5,9 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use base64::engine::general_purpose::STANDARD as B64;
-use base64::Engine;
 use regex::Regex;
 use serde_json::Value;
-use sha2::{Digest, Sha512};
+use sha2::{Digest, Sha256};
 use tokio::io::AsyncWriteExt;
 
 use crate::error::{bail, Error, Result};
@@ -32,6 +30,8 @@ fn downloads() -> String {
 pub struct ReleaseAsset {
     pub name: String,
     pub url: String,
+    /// The lowercase hex SHA-256 GitHub computed when the file was uploaded (the API's `digest` field).
+    pub sha256: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -136,6 +136,12 @@ fn parse_release(status: u16, body: Option<Value>) -> Result<Release> {
             Some(ReleaseAsset {
                 name: a.get("name")?.as_str()?.to_string(),
                 url: a.get("browser_download_url")?.as_str()?.to_string(),
+                sha256: a
+                    .get("digest")
+                    .and_then(Value::as_str)
+                    .and_then(|d| d.strip_prefix("sha256:"))
+                    .filter(|h| h.len() == 64 && h.chars().all(|c| c.is_ascii_hexdigit()))
+                    .map(str::to_ascii_lowercase),
             })
         })
         .collect();
@@ -173,44 +179,14 @@ pub async fn check_for_update(current: &str, system: &System) -> Result<UpdateIn
     Ok(info_for(current, &fetch_release().await?, system))
 }
 
-/// The base64 SHA-512 of `file_name` in electron-builder's latest-linux.yml.
-fn sha512_from_yml(yml: &str, file_name: &str) -> Option<String> {
-    let mut current_url: Option<String> = None;
-    let mut top_path: Option<String> = None;
-    let mut top_sha: Option<String> = None;
-    for line in yml.lines() {
-        let t = line.trim().trim_start_matches("- ");
-        let Some((k, v)) = t.split_once(':') else { continue };
-        let v = v.trim().trim_matches(|c| c == '\'' || c == '"').to_string();
-        let indented = line.starts_with(' ');
-        match (k.trim(), indented) {
-            ("url", true) => current_url = Some(v),
-            ("sha512", true) if current_url.as_deref() == Some(file_name) => return Some(v),
-            ("path", false) => top_path = Some(v),
-            ("sha512", false) => top_sha = Some(v),
-            _ => {}
-        }
-    }
-    top_sha.filter(|_| top_path.as_deref() == Some(file_name))
-}
-
-async fn download_text(url: &str) -> Result<String> {
-    let res = client().get(url).send().await.map_err(|_| Error::msg("Could not reach GitHub. Check your internet connection."))?;
-    if !res.status().is_success() {
-        bail!("GitHub answered with status {}", res.status().as_u16());
-    }
-    res.text().await.map_err(|e| Error::msg(e.to_string()))
-}
-
-/// Downloads the new AppImage next to the running one, checks it against the SHA-512 in the release's
-/// latest-linux.yml, and only then puts it in place. The running copy keeps working until the restart.
+/// Downloads the new AppImage next to the running one, checks it against the SHA-256 GitHub lists for that file,
+/// and only then puts it in place. The running copy keeps working until the restart.
 pub async fn download_update(system: &System) -> Result<()> {
     let Some(target) = app_image_path() else { bail!("Only the AppImage can install updates itself") };
     let release = fetch_release().await?;
     let not_found = || Error::msg("The update could not be found. Download it from GitHub instead.");
     let asset = pick_asset(&release.assets, system).ok_or_else(not_found)?;
-    let yml = release.assets.iter().find(|a| a.name == "latest-linux.yml" && a.url.starts_with(&downloads())).ok_or_else(not_found)?;
-    let expected = sha512_from_yml(&download_text(&yml.url).await?, &asset.name).ok_or_else(not_found)?;
+    let expected = asset.sha256.clone().ok_or_else(not_found)?;
 
     let partial = partial_path(&target);
     let result = async {
@@ -224,14 +200,14 @@ pub async fn download_update(system: &System) -> Result<()> {
             bail!("GitHub answered with status {}", res.status().as_u16());
         }
         let mut file = tokio::fs::File::create(&partial).await?;
-        let mut hash = Sha512::new();
+        let mut hash = Sha256::new();
         while let Some(chunk) = res.chunk().await.map_err(|e| Error::msg(e.to_string()))? {
             hash.update(&chunk);
             file.write_all(&chunk).await?;
         }
         file.flush().await?;
         drop(file);
-        if B64.encode(hash.finalize()) != expected {
+        if to_hex(&hash.finalize()) != expected {
             bail!("The downloaded update does not match its checksum, so it was not installed");
         }
         #[cfg(unix)]
@@ -247,6 +223,10 @@ pub async fn download_update(system: &System) -> Result<()> {
         let _ = tokio::fs::remove_file(&partial).await;
     }
     result
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn partial_path(target: &Path) -> PathBuf {
@@ -270,11 +250,11 @@ mod tests {
     const DL: &str = "https://github.com/zukotuutori/burrow-client/releases/download/v1.1.0/";
 
     fn asset(name: &str) -> ReleaseAsset {
-        ReleaseAsset { name: name.into(), url: format!("{DL}{name}") }
+        ReleaseAsset { name: name.into(), url: format!("{DL}{name}"), sha256: None }
     }
 
     fn assets() -> Vec<ReleaseAsset> {
-        ["Burrow.Client-1.1.0-arm64.dmg", "Burrow.Client-1.1.0.AppImage", "Burrow.Client-1.1.0-arm64.AppImage", "latest-linux.yml"]
+        ["Burrow.Client-1.1.0-arm64.dmg", "Burrow.Client-1.1.0.AppImage", "Burrow.Client-1.1.0-arm64.AppImage", "notes.txt"]
             .map(asset)
             .to_vec()
     }
@@ -315,7 +295,7 @@ mod tests {
         assert_eq!(pick(&plain, sys("darwin", "x64", false)), None);
         assert_eq!(pick(&plain, sys("linux", "x64", true)).as_deref(), Some("burrowclient.AppImage"));
         assert_eq!(pick(&plain, sys("linux", "x64", false)), None);
-        let evil = vec![ReleaseAsset { name: "Burrow.Client-1.1.0-arm64.dmg".into(), url: "https://example.com/Burrow.dmg".into() }];
+        let evil = vec![ReleaseAsset { name: "Burrow.Client-1.1.0-arm64.dmg".into(), url: "https://example.com/Burrow.dmg".into(), sha256: None }];
         assert_eq!(pick(&evil, sys("darwin", "arm64", false)), None);
     }
 
@@ -354,10 +334,21 @@ mod tests {
     }
 
     #[test]
-    fn reads_the_checksum_from_latest_linux_yml() {
-        let yml = "version: 1.1.0\nfiles:\n  - url: burrowclient.AppImage\n    sha512: abc==\n    size: 10\n  - url: other.AppImage\n    sha512: def==\npath: burrowclient.AppImage\nsha512: abc==\nreleaseDate: '2026-01-01'\n";
-        assert_eq!(sha512_from_yml(yml, "burrowclient.AppImage").as_deref(), Some("abc=="));
-        assert_eq!(sha512_from_yml(yml, "other.AppImage").as_deref(), Some("def=="));
-        assert_eq!(sha512_from_yml(yml, "missing.AppImage"), None);
+    fn reads_githubs_sha256_digest() {
+        let hex = "93F3E384F13065042CE3B7802A0A0A6DA8BAFB2ECAAC7AAE7D283E746EDEC0C0";
+        let body = json!({
+            "tag_name": "v2.0.0",
+            "html_url": "https://github.com/zukotuutori/burrow-client/releases/tag/v2.0.0",
+            "assets": [
+                { "name": "a.AppImage", "browser_download_url": format!("{DL}a.AppImage"), "digest": format!("sha256:{hex}") },
+                { "name": "b.AppImage", "browser_download_url": format!("{DL}b.AppImage"), "digest": "sha512:abc" },
+                { "name": "c.AppImage", "browser_download_url": format!("{DL}c.AppImage") }
+            ]
+        });
+        let r = parse_release(200, Some(body)).unwrap();
+        assert_eq!(r.assets[0].sha256.as_deref(), Some(hex.to_ascii_lowercase().as_str()));
+        assert_eq!(r.assets[1].sha256, None);
+        assert_eq!(r.assets[2].sha256, None);
+        assert_eq!(to_hex(&Sha256::digest(b"abc")), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     }
 }

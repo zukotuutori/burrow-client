@@ -181,9 +181,9 @@ The app is built with [Tauri](https://tauri.app):
 1. Set the new version in `package.json`. Tauri reads it from there.
 2. Build on a Mac (`npm run build:mac`) and on Linux (`npm run build:linux`).
 3. Create a GitHub release whose tag is the version with a `v` in front, for example `v1.1.0`.
-4. Upload the `.dmg`, the `.AppImage` and `latest-linux.yml` from `dist/`.
+4. Upload `burrowclient.dmg` and `burrowclient.AppImage` from `dist/`.
 
-`latest-linux.yml` holds the SHA-512 hash of the AppImage, so it has to come from the same build. `scripts/collect-release.mjs` writes it and copies the bundles to `dist/` under the names above; both build commands run it. Without it, AppImage users can still see the update but not install it from inside the app.
+`scripts/collect-release.mjs` copies the bundles to `dist/` under those names; both build commands run it. The AppImage checks its update against the SHA-256 that GitHub computes for every uploaded file, so nothing else needs to be uploaded.
 
 Bug reports and pull requests are welcome. For anything security related, please read [SECURITY.md](SECURITY.md) first and report it privately.
 

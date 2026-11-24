@@ -80,7 +80,7 @@ The server keeps registration closed unless an invite code is set, blocks an IP 
 
 Burrow only contacts GitHub when you click **Check for updates**, or once per start if you turned on the startup check (it's off by default). The request goes to `api.github.com` and carries nothing about you except your IP address. Download links from the answer are only used if they point to this repository's releases.
 
-- **AppImage:** the app downloads the new AppImage next to the old one and checks it against the SHA-512 hash in the release's `latest-linux.yml`. Only a download that matches replaces the app.
+- **AppImage:** the app downloads the new AppImage next to the old one and checks it against the SHA-256 hash GitHub lists for that file in the release (computed by GitHub on upload). Only a download that matches replaces the app.
 - **macOS:** the app never downloads or installs anything itself. It opens the download in your browser.
 
 The hash check catches broken or altered downloads. It does not protect against someone who takes over the GitHub account and publishes a bad release, but a manual download from the Releases page wouldn't protect you from that either.
